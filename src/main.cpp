@@ -48,7 +48,7 @@ float VOLTAGE_LIMIT = 1.5f;
 // ============================================================
 //  SECTION 2.5 — BASE ANGLE
 // ============================================================
-float initial_angle = 1.6f;
+float initial_angle = 4.225f;
 
 // ============================================================
 //  SECTION 3 — EMOTION CONFIGS
@@ -639,7 +639,10 @@ bool detect_touch()
   static unsigned long loop_start_ms = 0;
   if (loop_start_ms == 0) loop_start_ms = millis();
   
-  if (millis() - loop_start_ms < 2000) {
+  unsigned long now = millis();
+
+  // Also delay touch sensing by 1 second after a preset finishes to prevent recoil triggers
+  if (now - loop_start_ms < 2000 || now - last_touch_ms < 1000) {
     touch_baseline = current;
     return false;
   }
@@ -650,8 +653,6 @@ bool detect_touch()
   // This ensures the baseline stays put while you are actively pushing.
   touch_baseline += (current - touch_baseline) * 0.0001f;
 
-  unsigned long now = millis();
-  
   // Check if the movement is significant enough
   if (delta > TOUCH_THRESHOLD_RAD) 
   {
