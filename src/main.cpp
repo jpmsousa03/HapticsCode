@@ -242,7 +242,7 @@ int active_preset = 0;
 
 float touch_baseline = 0.0f;
 unsigned long last_touch_ms = 0;
-#define TOUCH_THRESHOLD_RAD 0.03f
+#define TOUCH_THRESHOLD_RAD 0.01f
 #define TOUCH_DEBOUNCE_MS 500
 
 unsigned long last_broadcast_ms = 0;
