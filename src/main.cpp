@@ -46,6 +46,11 @@ float GAIN = 6.0f;
 float VOLTAGE_LIMIT = 1.5f;
 
 // ============================================================
+//  SECTION 2.5 — BASE ANGLE
+// ============================================================
+float initial_angle = 1.6f;
+
+// ============================================================
 //  SECTION 3 — EMOTION CONFIGS
 //  This is where you tweak the feel of each emotion.
 //
@@ -685,6 +690,13 @@ void onVoltage(char *cmd)
   Serial.print(VOLTAGE_LIMIT, 2);
   Serial.println("}");
 }
+void onInitialAngle(char *cmd)
+{
+  initial_angle = atof(cmd);
+  Serial.print("{\"initial_angle\":");
+  Serial.print(initial_angle, 4);
+  Serial.println("}");
+}
 void onTrigger(char *cmd)
 {
   (void)cmd;
@@ -713,6 +725,7 @@ void onHelp(char *cmd)
   Serial.println("  P <0-5>  preset   e.g. P 0");
   Serial.println("  G <val>  gain     e.g. G 6.0");
   Serial.println("  V <val>  voltage  e.g. V 1.5");
+  Serial.println("  A <val>  angle    e.g. A 1.0 (initial angle)");
   Serial.println("  T        trigger");
   Serial.println("  I        status");
   Serial.println("  H        help");
@@ -770,6 +783,7 @@ void setup()
   command.add('P', onPreset, "preset");
   command.add('G', onGain, "gain");
   command.add('V', onVoltage, "voltage limit");
+  command.add('A', onInitialAngle, "initial angle");
   command.add('T', onTrigger, "trigger");
   command.add('I', onInfo, "info");
   command.add('H', onHelp, "help");
@@ -796,10 +810,10 @@ void loop()
     first_loop = false;
   }
 
-  float desired_target = preset_running ? preset_tick() : 0.0f;
+  float desired_target = preset_running ? (preset_tick() + initial_angle) : initial_angle;
 
   if (!preset_running) {
-    // Slowly glide from the current position back to 0.0 center
+    // Slowly glide from the current position back to initial_angle center
     // 0.001f determines the speed. Lower = slower. 
     if (current_target > desired_target) {
       current_target -= 0.001f;
