@@ -411,6 +411,9 @@ void build_pattern9()
     tmp[tmp_len++] = {dir * amp, hold_ms};  // Hold at position
   }
 
+  // Extra settle time before ending to prevent retrigger
+  tmp[tmp_len++] = {0.0f, 500};
+  
   tmp_len = append_ending(tmp, tmp_len, 8);
   repeat_into_seq(tmp, tmp_len);
 }
@@ -479,38 +482,38 @@ void build_pattern11()
 }
 
 // Pattern 12 (UNHAPPY)
-// Dejected sighing - SLOW reluctant turn, LONG defeated pause, QUICK collapse back
-// Asymmetric timing conveys reluctance and giving up
+// Dejected looking away - rotate to one side, wait, rotate to other side
+// Does NOT return to center between sides - continuous avoidance
 void build_pattern12()
 {
   Step tmp[MAX_STEPS / REPEAT_COUNT];
   int tmp_len = 0;
   float amp = emo[11].amp;
-  int turn_away_ms = emo[11].tilt_ms;
-  int look_away_ms = emo[11].hold_ms;
-  int return_ms = emo[11].return_ms;
-  int stillness_ms = 600;
+  int turn_ms = emo[11].tilt_ms;
+  int base_wait_ms = emo[11].hold_ms;
 
-  // 3 sighs - each one slightly different for organic feel
-  for (int i = 0; i < 3; i++)
-  {
-    float dir = (i % 2 == 0) ? -1.0f : 1.0f;
-    // Vary amplitude slightly - getting more defeated
-    float varAmp = amp * (1.0f - i * 0.1f);
-    
-    // Initial stillness - defeated, not moving
-    tmp[tmp_len++] = {0.0f, stillness_ms};
-    // Very slow reluctant turn away (in stages)
-    tmp[tmp_len++] = {dir * varAmp * 0.3f, turn_away_ms / 3};
-    tmp[tmp_len++] = {dir * varAmp * 0.6f, turn_away_ms / 3};
-    tmp[tmp_len++] = {dir * varAmp, turn_away_ms / 3};
-    // Long dejected hold - staring away
-    tmp[tmp_len++] = {dir * varAmp, look_away_ms};
-    // Quick defeated return - giving up
-    tmp[tmp_len++] = {0.0f, return_ms};
-  }
-  // Final long stillness
-  tmp[tmp_len++] = {0.0f, stillness_ms * 2};
+  // Pseudo-random wait times (deterministic but varied)
+  // Using different multipliers for organic feel
+  int wait_times[] = {800, 1200, 600, 1000, 900};
+  
+  // Start looking left
+  tmp[tmp_len++] = {-amp, turn_ms};
+  tmp[tmp_len++] = {-amp, base_wait_ms + wait_times[0]};
+  
+  // Slowly rotate to right (through center, but don't stop)
+  tmp[tmp_len++] = {amp, turn_ms * 2};  // Longer because traveling full distance
+  tmp[tmp_len++] = {amp, base_wait_ms + wait_times[1]};
+  
+  // Back to left
+  tmp[tmp_len++] = {-amp, turn_ms * 2};
+  tmp[tmp_len++] = {-amp, base_wait_ms + wait_times[2]};
+  
+  // To right again
+  tmp[tmp_len++] = {amp, turn_ms * 2};
+  tmp[tmp_len++] = {amp, base_wait_ms + wait_times[3]};
+  
+  // Final slow return to center
+  tmp[tmp_len++] = {0.0f, turn_ms};
 
   tmp_len = append_ending(tmp, tmp_len, 11);
   repeat_into_seq(tmp, tmp_len);
