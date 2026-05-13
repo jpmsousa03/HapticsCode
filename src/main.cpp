@@ -170,38 +170,42 @@ void setupEmotions()
   emo[7].jitter_ms = 0;
   emo[7].jitter_amp = 0;
 
-  // Pattern 9
-  emo[8].amp = 0.0f;
-  emo[8].tilt_ms = 0;
-  emo[8].hold_ms = 0;
-  emo[8].return_ms = 0;
+  // Pattern 9 (ANGRY)
+  // Sharp alternating motion, fast movement, brief holds
+  emo[8].amp = 0.6f;
+  emo[8].tilt_ms = 200;
+  emo[8].hold_ms = 100;
+  emo[8].return_ms = 200;
   emo[8].overshoot = 0;
   emo[8].jitter_ms = 0;
   emo[8].jitter_amp = 0;
 
-  // Pattern 10
-  emo[9].amp = 0.0f;
-  emo[9].tilt_ms = 0;
-  emo[9].hold_ms = 0;
-  emo[9].return_ms = 0;
-  emo[9].overshoot = 0;
+  // Pattern 10 (DELIGHTED)
+  // Happy nodding, swing out, settle, return, pause
+  emo[9].amp = 0.4f;
+  emo[9].tilt_ms = 350;
+  emo[9].hold_ms = 150;
+  emo[9].return_ms = 300;
+  emo[9].overshoot = 0.08f;
   emo[9].jitter_ms = 0;
   emo[9].jitter_amp = 0;
 
-  // Pattern 11
-  emo[10].amp = 0.0f;
-  emo[10].tilt_ms = 0;
-  emo[10].hold_ms = 0;
-  emo[10].return_ms = 0;
+  // Pattern 11 (RELAXED)
+  // Breathing pattern, smooth inhale/exhale with holds
+  emo[10].amp = 0.4f;
+  emo[10].tilt_ms = 1000;
+  emo[10].hold_ms = 250;
+  emo[10].return_ms = 1000;
   emo[10].overshoot = 0;
   emo[10].jitter_ms = 0;
   emo[10].jitter_amp = 0;
 
-  // Pattern 12
-  emo[11].amp = 0.0f;
-  emo[11].tilt_ms = 0;
-  emo[11].hold_ms = 0;
-  emo[11].return_ms = 0;
+  // Pattern 12 (UNHAPPY)
+  // Asymmetric sighing, slow turn away, quick return, stillness
+  emo[11].amp = 0.3f;
+  emo[11].tilt_ms = 750;
+  emo[11].hold_ms = 375;
+  emo[11].return_ms = 375;
   emo[11].overshoot = 0;
   emo[11].jitter_ms = 0;
   emo[11].jitter_amp = 0;
@@ -388,6 +392,125 @@ void build_pattern4()
   repeat_into_seq(tmp, tmp_len);
 }
 
+// Pattern 9 (ANGRY)
+// Sharp alternating motion with holds - aggressive but smooth
+// Pattern: LEFT-hold, RIGHT-hold, LEFT-hold, etc.
+void build_pattern9()
+{
+  Step tmp[MAX_STEPS / REPEAT_COUNT];
+  int tmp_len = 0;
+  float amp = emo[8].amp;
+  int move_ms = emo[8].tilt_ms;
+  int hold_ms = emo[8].hold_ms;
+
+  // Multiple rapid alternating movements (like the original angry emotion)
+  for (int i = 0; i < 8; i++)
+  {
+    float dir = (i % 2 == 0) ? -1.0f : 1.0f;
+    tmp[tmp_len++] = {dir * amp, move_ms};  // Move to position
+    tmp[tmp_len++] = {dir * amp, hold_ms};  // Brief hold
+  }
+
+  tmp_len = append_ending(tmp, tmp_len, 8);
+  repeat_into_seq(tmp, tmp_len);
+}
+
+// Pattern 10 (DELIGHTED)
+// Happy nodding pattern: swing out -> settle -> swing back -> pause at center
+// Alternates LEFT and RIGHT, like enthusiastic agreement
+void build_pattern10()
+{
+  Step tmp[MAX_STEPS / REPEAT_COUNT];
+  int tmp_len = 0;
+  float amp = emo[9].amp;
+  int swing_out_ms = emo[9].tilt_ms;
+  int settle_ms = emo[9].hold_ms;
+  int swing_back_ms = emo[9].return_ms;
+  int pause_ms = 200;
+  float overshoot = emo[9].overshoot;
+
+  // 5 nods alternating direction
+  for (int i = 0; i < 5; i++)
+  {
+    float dir = (i % 2 == 0) ? -1.0f : 1.0f;
+    // Swing out to side
+    tmp[tmp_len++] = {dir * amp, swing_out_ms};
+    // Settle at side (with slight overshoot feel)
+    tmp[tmp_len++] = {dir * (amp + overshoot), settle_ms / 2};
+    tmp[tmp_len++] = {dir * amp, settle_ms / 2};
+    // Swing back to center
+    tmp[tmp_len++] = {0.0f, swing_back_ms};
+    // Pause at center
+    tmp[tmp_len++] = {0.0f, pause_ms};
+  }
+
+  tmp_len = append_ending(tmp, tmp_len, 9);
+  repeat_into_seq(tmp, tmp_len);
+}
+
+// Pattern 11 (RELAXED)
+// Human breathing: inhale (smooth) -> hold -> exhale (smooth) -> hold
+// Symmetric, smooth, with slight speed variation in middle
+void build_pattern11()
+{
+  Step tmp[MAX_STEPS / REPEAT_COUNT];
+  int tmp_len = 0;
+  float amp = emo[10].amp;
+  int inhale_ms = emo[10].tilt_ms;
+  int hold_ms = emo[10].hold_ms;
+  int exhale_ms = emo[10].return_ms;
+
+  // Two breath cycles
+  for (int i = 0; i < 2; i++)
+  {
+    // Inhale - smooth rise to amplitude
+    tmp[tmp_len++] = {amp, inhale_ms};
+    // Hold at full inhale
+    tmp[tmp_len++] = {amp, hold_ms};
+    // Exhale - smooth return to center
+    tmp[tmp_len++] = {0.0f, exhale_ms};
+    // Hold at full exhale (center)
+    tmp[tmp_len++] = {0.0f, hold_ms};
+  }
+
+  tmp_len = append_ending(tmp, tmp_len, 10);
+  repeat_into_seq(tmp, tmp_len);
+}
+
+// Pattern 12 (UNHAPPY)
+// "Looking away" pattern: stillness -> slow turn away -> pause -> quick return -> stillness
+// Alternates direction each cycle (left, then right)
+// Signifies dejection, avoidance, giving up
+void build_pattern12()
+{
+  Step tmp[MAX_STEPS / REPEAT_COUNT];
+  int tmp_len = 0;
+  float amp = emo[11].amp;
+  int turn_away_ms = emo[11].tilt_ms;
+  int look_away_ms = emo[11].hold_ms;
+  int return_ms = emo[11].return_ms;
+  int stillness_ms = 500;
+
+  // Two sighs alternating direction
+  for (int i = 0; i < 2; i++)
+  {
+    float dir = (i % 2 == 0) ? -1.0f : 1.0f;
+    // Initial stillness - defeated, not moving
+    tmp[tmp_len++] = {0.0f, stillness_ms};
+    // Slow reluctant turn away
+    tmp[tmp_len++] = {dir * amp, turn_away_ms};
+    // Pause looking away - dejected hold
+    tmp[tmp_len++] = {dir * amp, look_away_ms};
+    // Quick return to center - giving up
+    tmp[tmp_len++] = {0.0f, return_ms};
+    // Final stillness
+    tmp[tmp_len++] = {0.0f, stillness_ms};
+  }
+
+  tmp_len = append_ending(tmp, tmp_len, 11);
+  repeat_into_seq(tmp, tmp_len);
+}
+
 void start_preset(int id)
 {
   switch (id)
@@ -408,12 +531,28 @@ void start_preset(int id)
   case 5:
   case 6:
   case 7:
-  case 8:
-  case 9:
-  case 10:
-  case 11:
-  case 12:
     // empty patterns for now
+    {
+      Step tmp[MAX_STEPS / REPEAT_COUNT];
+      int tmp_len = 0;
+      tmp_len = append_ending(tmp, tmp_len, id);
+      repeat_into_seq(tmp, tmp_len);
+    }
+    break;
+  case 8:
+    build_pattern9();
+    break;
+  case 9:
+    build_pattern10();
+    break;
+  case 10:
+    build_pattern11();
+    break;
+  case 11:
+    build_pattern12();
+    break;
+  case 12:
+    // empty pattern for now
     {
       Step tmp[MAX_STEPS / REPEAT_COUNT];
       int tmp_len = 0;
