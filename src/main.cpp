@@ -200,7 +200,7 @@ int append_ending(Step *tmp, int tmp_len, int idx)
   return tmp_len;
 }
 
-void build_pattern1()
+void build_pattern1() //angry
 {
   Step tmp[MAX_STEPS / REPEAT_COUNT];
   int tmp_len = 0;
@@ -213,7 +213,7 @@ void build_pattern1()
   repeat_into_seq(tmp, tmp_len);
 }
 
-void build_pattern2()
+void build_pattern2() //unhappy
 {
   Step tmp[MAX_STEPS / REPEAT_COUNT];
   int tmp_len = 0;
@@ -234,7 +234,7 @@ void build_pattern2()
   repeat_into_seq(tmp, tmp_len);
 }
 
-void build_pattern3()
+void build_pattern3() //delighted
 {
   Step tmp[MAX_STEPS / REPEAT_COUNT];
   int tmp_len = 0;
@@ -277,7 +277,7 @@ void build_pattern3()
   repeat_into_seq(tmp, tmp_len);
 }
 
-void build_pattern4()
+void build_pattern4() //relaxed
 {
   Step tmp[MAX_STEPS / REPEAT_COUNT]; 
   int tmp_len = 0;
@@ -290,7 +290,7 @@ void build_pattern4()
   repeat_into_seq(tmp, tmp_len);
 }
 
-void build_pattern5() {
+void build_pattern5() { //delighted (curious)
   Step tmp[MAX_STEPS / REPEAT_COUNT];
   int tmp_len = 0;
 
@@ -322,7 +322,34 @@ void build_pattern5() {
   repeat_into_seq(tmp, tmp_len);
 }
 
+void build_pattern6() // relaxed
+{
+  Step tmp[MAX_STEPS / REPEAT_COUNT]; 
+  int tmp_len = 0;
 
+  tmp[tmp_len++] = {6.28f, 6000};  // much slower gentle movement
+  tmp[tmp_len++] = {6.28f, 1200};  // soft resting pause
+  tmp[tmp_len++] = {0.0f, 7000};   // long smooth return
+
+  tmp_len = append_ending(tmp, tmp_len, 1);
+  repeat_into_seq(tmp, tmp_len);
+}
+
+void build_pattern7() // unhappy
+{
+  Step tmp[MAX_STEPS / REPEAT_COUNT]; 
+  int tmp_len = 0;
+
+  tmp[tmp_len++] = {-0.60f, 1400};  // heavier drop, slightly faster
+  tmp[tmp_len++] = {-0.45f, 250};   // weak rebound (more “snap back”)
+  tmp[tmp_len++] = {-0.56f, 1200};  // re-collapse (less smooth, more decisive)
+
+  tmp[tmp_len++] = {0.0f, 500};     // abrupt break toward center
+  tmp[tmp_len++] = {0.0f, 2200};    // slow after-settle (dragging feeling)
+
+  tmp_len = append_ending(tmp, tmp_len, 1);
+  repeat_into_seq(tmp, tmp_len);
+}
 // Pattern 9 (ANGRY)
 // Sharp alternating motion - aggressive but SAFE
 // Deliberate left-right swings with holds, no fast oscillation
@@ -470,7 +497,11 @@ void start_preset(int id)
     build_pattern5();
     break;
   case 5:
+    build_pattern6();
+    break;
   case 6:
+    build_pattern7();
+    break;
   case 7:
     // empty patterns for now
     {
