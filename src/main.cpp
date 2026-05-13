@@ -120,7 +120,7 @@ void setupEmotions()
   emo[1].jitter_ms = 0;
   emo[1].jitter_amp = 0;
 
-  // Pattern 3 (formerly DELIGHTED)
+  // Pattern 3 (formerly DELIGHTED) :)
   emo[2].amp = 0.45f;
   emo[2].tilt_ms = 300;
   emo[2].hold_ms = 300;
