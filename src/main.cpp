@@ -171,41 +171,41 @@ void setupEmotions()
   emo[7].jitter_amp = 0;
 
   // Pattern 9 (ANGRY)
-  // Sharp alternating motion, fast movement, brief holds
-  emo[8].amp = 0.6f;
-  emo[8].tilt_ms = 200;
-  emo[8].hold_ms = 100;
-  emo[8].return_ms = 200;
+  // Sharp alternating motion, aggressive but SAFE timing
+  emo[8].amp = 0.8f;
+  emo[8].tilt_ms = 250;
+  emo[8].hold_ms = 150;
+  emo[8].return_ms = 250;
   emo[8].overshoot = 0;
   emo[8].jitter_ms = 0;
   emo[8].jitter_amp = 0;
 
   // Pattern 10 (DELIGHTED)
-  // Happy nodding, swing out, settle, return, pause
-  emo[9].amp = 0.4f;
-  emo[9].tilt_ms = 350;
+  // Happy nodding, bouncy but SAFE timing
+  emo[9].amp = 0.7f;
+  emo[9].tilt_ms = 300;
   emo[9].hold_ms = 150;
   emo[9].return_ms = 300;
-  emo[9].overshoot = 0.08f;
+  emo[9].overshoot = 0.1f;
   emo[9].jitter_ms = 0;
   emo[9].jitter_amp = 0;
 
   // Pattern 11 (RELAXED)
-  // Breathing pattern, smooth inhale/exhale with holds
-  emo[10].amp = 0.4f;
-  emo[10].tilt_ms = 1000;
-  emo[10].hold_ms = 250;
-  emo[10].return_ms = 1000;
+  // Breathing pattern, SLOW and DEEP
+  emo[10].amp = 0.6f;
+  emo[10].tilt_ms = 1500;
+  emo[10].hold_ms = 400;
+  emo[10].return_ms = 1800;
   emo[10].overshoot = 0;
   emo[10].jitter_ms = 0;
   emo[10].jitter_amp = 0;
 
   // Pattern 12 (UNHAPPY)
-  // Asymmetric sighing, slow turn away, quick return, stillness
-  emo[11].amp = 0.3f;
-  emo[11].tilt_ms = 750;
-  emo[11].hold_ms = 375;
-  emo[11].return_ms = 375;
+  // Asymmetric sighing, SLOW reluctant turn, FAST defeated return
+  emo[11].amp = 0.5f;
+  emo[11].tilt_ms = 1200;
+  emo[11].hold_ms = 800;
+  emo[11].return_ms = 250;
   emo[11].overshoot = 0;
   emo[11].jitter_ms = 0;
   emo[11].jitter_amp = 0;
@@ -393,8 +393,8 @@ void build_pattern4()
 }
 
 // Pattern 9 (ANGRY)
-// Sharp alternating motion with holds - aggressive but smooth
-// Pattern: LEFT-hold, RIGHT-hold, LEFT-hold, etc.
+// Sharp alternating motion - aggressive but SAFE
+// Deliberate left-right swings with holds, no fast oscillation
 void build_pattern9()
 {
   Step tmp[MAX_STEPS / REPEAT_COUNT];
@@ -403,12 +403,12 @@ void build_pattern9()
   int move_ms = emo[8].tilt_ms;
   int hold_ms = emo[8].hold_ms;
 
-  // Multiple rapid alternating movements (like the original angry emotion)
-  for (int i = 0; i < 8; i++)
+  // 6 deliberate alternating movements - aggressive but safe
+  for (int i = 0; i < 6; i++)
   {
     float dir = (i % 2 == 0) ? -1.0f : 1.0f;
     tmp[tmp_len++] = {dir * amp, move_ms};  // Move to position
-    tmp[tmp_len++] = {dir * amp, hold_ms};  // Brief hold
+    tmp[tmp_len++] = {dir * amp, hold_ms};  // Hold at position
   }
 
   tmp_len = append_ending(tmp, tmp_len, 8);
@@ -416,8 +416,8 @@ void build_pattern9()
 }
 
 // Pattern 10 (DELIGHTED)
-// Happy nodding pattern: swing out -> settle -> swing back -> pause at center
-// Alternates LEFT and RIGHT, like enthusiastic agreement
+// Happy nodding - energetic but SAFE
+// Smooth swings with gentle settle, no fast oscillation
 void build_pattern10()
 {
   Step tmp[MAX_STEPS / REPEAT_COUNT];
@@ -427,17 +427,15 @@ void build_pattern10()
   int settle_ms = emo[9].hold_ms;
   int swing_back_ms = emo[9].return_ms;
   int pause_ms = 200;
-  float overshoot = emo[9].overshoot;
 
-  // 5 nods alternating direction
+  // 5 happy nods alternating direction - safe timing
   for (int i = 0; i < 5; i++)
   {
     float dir = (i % 2 == 0) ? -1.0f : 1.0f;
     // Swing out to side
     tmp[tmp_len++] = {dir * amp, swing_out_ms};
-    // Settle at side (with slight overshoot feel)
-    tmp[tmp_len++] = {dir * (amp + overshoot), settle_ms / 2};
-    tmp[tmp_len++] = {dir * amp, settle_ms / 2};
+    // Settle at side
+    tmp[tmp_len++] = {dir * amp, settle_ms};
     // Swing back to center
     tmp[tmp_len++] = {0.0f, swing_back_ms};
     // Pause at center
@@ -449,8 +447,8 @@ void build_pattern10()
 }
 
 // Pattern 11 (RELAXED)
-// Human breathing: inhale (smooth) -> hold -> exhale (smooth) -> hold
-// Symmetric, smooth, with slight speed variation in middle
+// Deep breathing - SLOW, SMOOTH, MEDITATIVE
+// Long inhale, peaceful hold, slow exhale
 void build_pattern11()
 {
   Step tmp[MAX_STEPS / REPEAT_COUNT];
@@ -460,16 +458,19 @@ void build_pattern11()
   int hold_ms = emo[10].hold_ms;
   int exhale_ms = emo[10].return_ms;
 
-  // Two breath cycles
-  for (int i = 0; i < 2; i++)
+  // 3 deep breath cycles - slow and peaceful
+  for (int i = 0; i < 3; i++)
   {
-    // Inhale - smooth rise to amplitude
-    tmp[tmp_len++] = {amp, inhale_ms};
-    // Hold at full inhale
+    // Gradual inhale with slight acceleration in middle
+    tmp[tmp_len++] = {amp * 0.3f, inhale_ms / 3};
+    tmp[tmp_len++] = {amp * 0.7f, inhale_ms / 3};
+    tmp[tmp_len++] = {amp, inhale_ms / 3};
+    // Peaceful hold at full inhale
     tmp[tmp_len++] = {amp, hold_ms};
-    // Exhale - smooth return to center
-    tmp[tmp_len++] = {0.0f, exhale_ms};
-    // Hold at full exhale (center)
+    // Slow exhale
+    tmp[tmp_len++] = {amp * 0.5f, exhale_ms / 2};
+    tmp[tmp_len++] = {0.0f, exhale_ms / 2};
+    // Rest at center
     tmp[tmp_len++] = {0.0f, hold_ms};
   }
 
@@ -478,9 +479,8 @@ void build_pattern11()
 }
 
 // Pattern 12 (UNHAPPY)
-// "Looking away" pattern: stillness -> slow turn away -> pause -> quick return -> stillness
-// Alternates direction each cycle (left, then right)
-// Signifies dejection, avoidance, giving up
+// Dejected sighing - SLOW reluctant turn, LONG defeated pause, QUICK collapse back
+// Asymmetric timing conveys reluctance and giving up
 void build_pattern12()
 {
   Step tmp[MAX_STEPS / REPEAT_COUNT];
@@ -489,23 +489,28 @@ void build_pattern12()
   int turn_away_ms = emo[11].tilt_ms;
   int look_away_ms = emo[11].hold_ms;
   int return_ms = emo[11].return_ms;
-  int stillness_ms = 500;
+  int stillness_ms = 600;
 
-  // Two sighs alternating direction
-  for (int i = 0; i < 2; i++)
+  // 3 sighs - each one slightly different for organic feel
+  for (int i = 0; i < 3; i++)
   {
     float dir = (i % 2 == 0) ? -1.0f : 1.0f;
+    // Vary amplitude slightly - getting more defeated
+    float varAmp = amp * (1.0f - i * 0.1f);
+    
     // Initial stillness - defeated, not moving
     tmp[tmp_len++] = {0.0f, stillness_ms};
-    // Slow reluctant turn away
-    tmp[tmp_len++] = {dir * amp, turn_away_ms};
-    // Pause looking away - dejected hold
-    tmp[tmp_len++] = {dir * amp, look_away_ms};
-    // Quick return to center - giving up
+    // Very slow reluctant turn away (in stages)
+    tmp[tmp_len++] = {dir * varAmp * 0.3f, turn_away_ms / 3};
+    tmp[tmp_len++] = {dir * varAmp * 0.6f, turn_away_ms / 3};
+    tmp[tmp_len++] = {dir * varAmp, turn_away_ms / 3};
+    // Long dejected hold - staring away
+    tmp[tmp_len++] = {dir * varAmp, look_away_ms};
+    // Quick defeated return - giving up
     tmp[tmp_len++] = {0.0f, return_ms};
-    // Final stillness
-    tmp[tmp_len++] = {0.0f, stillness_ms};
   }
+  // Final long stillness
+  tmp[tmp_len++] = {0.0f, stillness_ms * 2};
 
   tmp_len = append_ending(tmp, tmp_len, 11);
   repeat_into_seq(tmp, tmp_len);
