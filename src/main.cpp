@@ -99,130 +99,23 @@ struct EmotionConfig
 
 EmotionConfig emo[13];
 
-void setupEmotions()
-{
+void setupEmotions() {
+  // All overshoot and jitter values — set to 0 unless you want them
+  // The amp/tilt_ms/hold_ms/return_ms values here are unused by patterns 1-4
+  // because those patterns have their moves hardcoded in the build_ functions
 
-  // Pattern 1 (formerly ANGRY)
-  emo[0].amp = 0.50f;
-  emo[0].tilt_ms = 180;
-  emo[0].hold_ms = 0;
-  emo[0].return_ms = 0;
-  emo[0].overshoot = 0;
-  emo[0].jitter_ms = 0;
-  emo[0].jitter_amp = 0;
+  for (int i = 0; i < 13; i++) {
+    emo[i].amp        = 0;
+    emo[i].tilt_ms    = 0;
+    emo[i].hold_ms    = 0;
+    emo[i].return_ms  = 0;
+    emo[i].overshoot  = 0;
+    emo[i].jitter_ms  = 0;
+    emo[i].jitter_amp = 0;
+  }
 
-  // Pattern 2 (formerly UNHAPPY)
-  emo[1].amp = 0.30f;
-  emo[1].tilt_ms = 250;
-  emo[1].hold_ms = 0;
-  emo[1].return_ms = 0;
-  emo[1].overshoot = 0;
-  emo[1].jitter_ms = 0;
-  emo[1].jitter_amp = 0;
-
-  // Pattern 3 (formerly DELIGHTED) :)
-  emo[2].amp = 0.45f;
-  emo[2].tilt_ms = 300;
-  emo[2].hold_ms = 300;
-  emo[2].return_ms = 0;
-  emo[2].overshoot = 0;
-  emo[2].jitter_ms = 0;
-  emo[2].jitter_amp = 0;
-
-  // Pattern 4 (formerly RELAXED)
-  emo[3].amp = 0.20f;
-  emo[3].tilt_ms = 500;
-  emo[3].hold_ms = 0;
-  emo[3].return_ms = 0;
-  emo[3].overshoot = 0;
-  emo[3].jitter_ms = 0;
-  emo[3].jitter_amp = 0;
-
-  // Pattern 5 (formerly CURIOUS)
-  // Slow deliberate tilt, long thoughtful hold, gentle return
-  emo[4].amp = 0.87f;
-  emo[4].tilt_ms = 600;
-  emo[4].hold_ms = 1500;
-  emo[4].return_ms = 480;
-  emo[4].overshoot = 0;
-  emo[4].jitter_ms = 0;
-  emo[4].jitter_amp = 0;
-
-  // Pattern 6
-  emo[5].amp = 0.40f;
-  emo[5].tilt_ms = 200;
-  emo[5].hold_ms = 300;
-  emo[5].return_ms = 200;
-  emo[5].overshoot = 0;
-  emo[5].jitter_ms = 0;
-  emo[5].jitter_amp = 0;
-
-  // Pattern 7
-  emo[6].amp = 0.0f;
-  emo[6].tilt_ms = 0;
-  emo[6].hold_ms = 0;
-  emo[6].return_ms = 0;
-  emo[6].overshoot = 0;
-  emo[6].jitter_ms = 0;
-  emo[6].jitter_amp = 0;
-
-  // Pattern 8
-  emo[7].amp = 0.0f;
-  emo[7].tilt_ms = 0;
-  emo[7].hold_ms = 0;
-  emo[7].return_ms = 0;
-  emo[7].overshoot = 0;
-  emo[7].jitter_ms = 0;
-  emo[7].jitter_amp = 0;
-
-  // Pattern 9 (ANGRY)
-  // Sharp alternating motion, aggressive but SAFE timing
-  emo[8].amp = 0.8f;
-  emo[8].tilt_ms = 250;
-  emo[8].hold_ms = 150;
-  emo[8].return_ms = 250;
-  emo[8].overshoot = 0;
-  emo[8].jitter_ms = 0;
-  emo[8].jitter_amp = 0;
-
-  // Pattern 10 (DELIGHTED)
-  // Happy nodding, bouncy but SAFE timing
-  emo[9].amp = 0.7f;
-  emo[9].tilt_ms = 300;
-  emo[9].hold_ms = 150;
-  emo[9].return_ms = 300;
-  emo[9].overshoot = 0.1f;
-  emo[9].jitter_ms = 0;
-  emo[9].jitter_amp = 0;
-
-  // Pattern 11 (RELAXED)
-  // Breathing pattern, SLOW and DEEP
-  emo[10].amp = 0.6f;
-  emo[10].tilt_ms = 1500;
-  emo[10].hold_ms = 400;
-  emo[10].return_ms = 1800;
-  emo[10].overshoot = 0;
-  emo[10].jitter_ms = 0;
-  emo[10].jitter_amp = 0;
-
-  // Pattern 12 (UNHAPPY)
-  // Asymmetric sighing, SLOW reluctant turn, FAST defeated return
-  emo[11].amp = 0.5f;
-  emo[11].tilt_ms = 1200;
-  emo[11].hold_ms = 800;
-  emo[11].return_ms = 250;
-  emo[11].overshoot = 0;
-  emo[11].jitter_ms = 0;
-  emo[11].jitter_amp = 0;
-
-  // Pattern 13
-  emo[12].amp = 0.0f;
-  emo[12].tilt_ms = 0;
-  emo[12].hold_ms = 0;
-  emo[12].return_ms = 0;
-  emo[12].overshoot = 0;
-  emo[12].jitter_ms = 0;
-  emo[12].jitter_amp = 0;
+  // Add overshoot or jitter to any pattern here when you want it
+  // e.g. emo[0].jitter_ms = 40; emo[0].jitter_amp = 0.06f;
 }
 
 // ============================================================
@@ -386,16 +279,49 @@ void build_pattern3()
 
 void build_pattern4()
 {
-  Step tmp[MAX_STEPS / REPEAT_COUNT];
+  Step tmp[MAX_STEPS / REPEAT_COUNT]; 
   int tmp_len = 0;
   tmp[tmp_len++] = {6.28f, 3000};
-  tmp[tmp_len++] = {0.0f, 3000}; // Relaxed pause
+  tmp[tmp_len++] = {0.0f, 3000}; // Relaxed pause 
 
 
 
   tmp_len = append_ending(tmp, tmp_len, 1);
   repeat_into_seq(tmp, tmp_len);
 }
+
+void build_pattern5() {
+  Step tmp[MAX_STEPS / REPEAT_COUNT];
+  int tmp_len = 0;
+
+  // --- Right side ---
+  tmp[tmp_len++] = { 0.35f, 800};   // slowly tilt right
+  tmp[tmp_len++] = { 0.45f,  80};   // jiggle up
+  tmp[tmp_len++] = { 0.25f,  80};   // jiggle down
+  tmp[tmp_len++] = { 0.45f,  80};   // jiggle up
+  tmp[tmp_len++] = { 0.25f,  80};   // jiggle down
+  tmp[tmp_len++] = { 0.45f,  80};   // jiggle up
+  tmp[tmp_len++] = { 0.20f, 150};   // bounce dip
+  tmp[tmp_len++] = { 0.35f, 200};   // bounce back
+  tmp[tmp_len++] = { 0.35f, 600};   // hold and look curiously
+  tmp[tmp_len++] = { 0.0f,  800};   // slowly return to center
+
+  // --- Left side (mirror) ---
+  tmp[tmp_len++] = {-0.35f, 800};
+  tmp[tmp_len++] = {-0.45f,  80};
+  tmp[tmp_len++] = {-0.25f,  80};
+  tmp[tmp_len++] = {-0.45f,  80};
+  tmp[tmp_len++] = {-0.25f,  80};
+  tmp[tmp_len++] = {-0.45f,  80};
+  tmp[tmp_len++] = {-0.20f, 150};
+  tmp[tmp_len++] = {-0.35f, 200};
+  tmp[tmp_len++] = {-0.35f, 600};
+  tmp[tmp_len++] = { 0.0f,  800};   // slowly return to center
+
+  tmp_len = append_ending(tmp, tmp_len, 4);  // uses emo[4] for overshoot/jitter
+  repeat_into_seq(tmp, tmp_len);
+}
+
 
 // Pattern 9 (ANGRY)
 // Sharp alternating motion - aggressive but SAFE
@@ -529,7 +455,7 @@ void start_preset(int id)
   switch (id)
   {
   case 0:
-    build_pattern1();
+    build_pattern1(); 
     break;
   case 1:
     build_pattern2();
@@ -541,6 +467,8 @@ void start_preset(int id)
     build_pattern4();
     break;
   case 4:
+    build_pattern5();
+    break;
   case 5:
   case 6:
   case 7:
