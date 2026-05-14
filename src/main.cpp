@@ -116,6 +116,7 @@ void setupEmotions() {
 
   // Add overshoot or jitter to any pattern here when you want it
   // e.g. emo[0].jitter_ms = 40; emo[0].jitter_amp = 0.06f;
+  emo[9].overshoot = 0.1f;  // Pattern 10 (DELIGHTED) - bouncy settle
 }
 
 // ============================================================
@@ -357,9 +358,9 @@ void build_pattern9()
 {
   Step tmp[MAX_STEPS / REPEAT_COUNT];
   int tmp_len = 0;
-  float amp = emo[8].amp;
-  int move_ms = emo[8].tilt_ms;
-  int hold_ms = emo[8].hold_ms;
+  float amp     = 0.8f;
+  int move_ms   = 250;
+  int hold_ms   = 150;
 
   // 6 deliberate alternating movements - aggressive but safe
   for (int i = 0; i < 6; i++)
@@ -383,11 +384,11 @@ void build_pattern10()
 {
   Step tmp[MAX_STEPS / REPEAT_COUNT];
   int tmp_len = 0;
-  float amp = emo[9].amp;
-  int swing_out_ms = emo[9].tilt_ms;
-  int settle_ms = emo[9].hold_ms;
-  int swing_back_ms = emo[9].return_ms;
-  int pause_ms = 200;
+  float amp         = 0.7f;
+  int swing_out_ms  = 300;
+  int settle_ms     = 150;
+  int swing_back_ms = 300;
+  int pause_ms      = 200;
 
   // 5 happy nods alternating direction - safe timing
   for (int i = 0; i < 5; i++)
@@ -414,10 +415,10 @@ void build_pattern11()
 {
   Step tmp[MAX_STEPS / REPEAT_COUNT];
   int tmp_len = 0;
-  float amp = emo[10].amp;
-  int inhale_ms = emo[10].tilt_ms;
-  int hold_ms = emo[10].hold_ms;
-  int exhale_ms = emo[10].return_ms;
+  float amp     = 0.6f;
+  int inhale_ms = 1500;
+  int hold_ms   = 400;
+  int exhale_ms = 1800;
 
   // 3 deep breath cycles - slow and peaceful
   for (int i = 0; i < 3; i++)
@@ -446,9 +447,9 @@ void build_pattern12()
 {
   Step tmp[MAX_STEPS / REPEAT_COUNT];
   int tmp_len = 0;
-  float amp = emo[11].amp;
-  int turn_ms = emo[11].tilt_ms;
-  int base_wait_ms = emo[11].hold_ms;
+  float amp        = 0.5f;
+  int turn_ms      = 1200;
+  int base_wait_ms = 800;
 
   // Pseudo-random wait times (deterministic but varied)
   // Using different multipliers for organic feel
