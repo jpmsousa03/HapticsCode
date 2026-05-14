@@ -53,7 +53,7 @@
   .pbtn .em { font-size: 18px; display: block; margin-bottom: 4px; }
   .pbtn .nm { font-family: var(--font-head); font-size: 11px; font-weight: 700; display: block; }
   .pbtn .ds { font-size: 9px; color: var(--muted); display: block; margin-top: 1px; }
-  .pbtn .num { position: absolute; top:7px; right:9px; font-size:9px; color:var(--border); }
+  .pbtn .num { position: absolute; top:7px; right:9px; font-size:12px; color:rgb(148, 148, 148); }
   .trig {
     width: 100%; margin-top: 8px; padding: 12px;
     border-radius: 8px; border: 1px solid var(--accent);
@@ -269,7 +269,7 @@ function toggleFullSize() {
 
 // ---- FACE ------------------------------------------------
 function updateFace(id, runOverride) {
-  const p = PRESETS[id];
+  const p = PRESETS.find(pr => pr.id === id) || PRESETS[0];
   const c = p.col;
   document.getElementById('hc').setAttribute('stroke', c);
   document.getElementById('hc').setAttribute('stroke-width', '2');
