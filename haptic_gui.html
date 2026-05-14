@@ -242,7 +242,7 @@ PRESETS.forEach(p => {
   const b = document.createElement('button');
   b.className = 'pbtn' + (p.id===0?' active':'');
   b.id = 'pb'+p.id;
-  b.innerHTML = `<span class="em">${p.em}</span><span class="nm">${p.name}</span><span class="ds">${p.ds}</span>`;
+  b.innerHTML = `<span class="em">${p.em}</span><span class="nm">${p.name}</span><span class="ds">${p.ds}</span><span class="num">${p.id}</span>`;
   b.onclick = () => selectPreset(p.id);
   pgrid.appendChild(b);
 });
