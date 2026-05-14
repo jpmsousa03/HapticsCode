@@ -7,7 +7,7 @@
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #0e0f11; --panel: #16181c; --border: #2a2d34;
+    --bg: #0e0f11; --panel: #16181c; --border: #4a505e;
     --accent: #e8ff47; --accent2: #47ffe8; --text: #e8eaf0;
     --muted: #5a5f6e; --danger: #ff4747;
     --font-head: 'Syne', sans-serif; --font-mono: 'DM Mono', monospace;
@@ -44,10 +44,9 @@
   .pbtn {
     background: transparent; border: 1px solid var(--border);
     border-radius: 8px; padding: 11px 9px; cursor: pointer;
-    text-align: left; transition: all .15s; position: relative;
+    text-align: center; transition: all .15s; position: relative;
     color: var(--text); font-family: var(--font-mono);
   }
-  .pbtn:hover:not(:disabled) { border-color: var(--muted); background: rgba(255,255,255,.03); }
   .pbtn.active { border-color: var(--accent); background: rgba(232,255,71,.07); }
   .pbtn.running { border-color: var(--accent2); background: rgba(71,255,232,.07); }
   .pbtn:disabled { opacity: .35; cursor: not-allowed; }
@@ -127,7 +126,7 @@
   .cnote { font-size: 10px; color: var(--muted); margin-left: auto; }
   body.full-size #left-col { grid-column: 1 / -1; grid-row: 1 / -1; z-index: 100; height: 100vh; }
   body.full-size #center-col, body.full-size #right-col, body.full-size header, body.full-size .cbar { display: none !important; }
-  body.full-size .pgrid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
+  body.full-size .pgrid { grid-template-columns: repeat(4, 1fr); gap: 15px; }
   body.full-size .pbtn { padding: 25px 15px; }
   body.full-size .pbtn .em { font-size: 36px; margin-bottom: 8px; }
   body.full-size .pbtn .nm { font-size: 16px; }
@@ -148,6 +147,7 @@
 <div id="left-col" style="display:flex;flex-direction:column;gap:10px;grid-row:2;height:100%;box-sizing:border-box">
   <div class="panel" style="height:100%; box-sizing:border-box; display:flex; flex-direction:column;">
     <div class="ptitle" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <small id="presets-order"></small>
       <span>Emotion Presets</span>
       <button class="cbtn" style="padding:2px 6px; font-size:9px;" onclick="toggleFullSize()">⛶ FULL</button>
     </div>
@@ -168,12 +168,7 @@
         <filter id="gl"><feGaussianBlur stdDeviation="2" result="b"/>
           <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
       </defs>
-      <circle cx="75" cy="68" r="55" fill="url(#hg)" stroke="#2a2d34" stroke-width="1"/>
-      <ellipse id="el" cx="56" cy="54" rx="9" ry="7" fill="#e8ff47" filter="url(#gl)" opacity=".9"/>
-      <ellipse id="er" cx="94" cy="54" rx="9" ry="7" fill="#e8ff47" filter="url(#gl)" opacity=".9"/>
-      <circle cx="56" cy="54" r="3.5" fill="#0e0f11"/>
-      <circle cx="94" cy="54" r="3.5" fill="#0e0f11"/>
-      <path id="mp" d="M 56 82 Q 75 92 94 82" fill="none" stroke="#e8ff47" stroke-width="2" stroke-linecap="round" filter="url(#gl)"/>
+      <circle id="hc" cx="75" cy="68" r="55" fill="url(#hg)" stroke="#2a2d34" stroke-width="1"/>
       <rect x="68" y="122" width="14" height="22" rx="3" fill="#2a2d34"/>
     </svg>
     <div class="big-angle" id="adeg">0.0°</div>
@@ -213,21 +208,28 @@
 </div>
 
 <script>
+
+const random_presets_order = randomize([0,8,1,9,5,10,4,2]);
+document.getElementById('presets-order').textContent = random_presets_order.join(', ');
+
+function randomize(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 // ---- PRESETS ---------------------------------------------
 const PRESETS = [
-  {id:0,name:'Pattern 1',    em:'',ds:'',   col:'#e8ff47',mouth:'up',   eyes:'wide' },
-  {id:1,name:'Pattern 2',      em:'',ds:'',      col:'#47a3ff',mouth:'down', eyes:'half' },
-  {id:2,name:'Pattern 3',em:'',ds:'',   col:'#ff9c47',mouth:'open', eyes:'wide' },
-  {id:3,name:'Pattern 4',    em:'',ds:'',         col:'#ff4747',mouth:'down', eyes:'narrow'},
-  {id:4,name:'Pattern 5',  em:'',ds:'',  col:'#c447ff',mouth:'slight',eyes:'wide'},
-  {id:5,name:'Pattern 6',     em:'',ds:'',   col:'#47ffe8',mouth:'slight',eyes:'wide'},
-  {id:6,name:'Pattern 7',   em:'',ds:'',    col:'#ff47e8',mouth:'up',   eyes:'half' },
-  {id:7,name:'Pattern 8',   em:'',ds:'',    col:'#47ff9c',mouth:'down', eyes:'half' },
-  {id:8,name:'Pattern 9',   em:'',ds:'',    col:'#ff4747',mouth:'open', eyes:'narrow'},
-  {id:9,name:'Pattern 10',   em:'',ds:'',   col:'#47a3ff',mouth:'up',   eyes:'narrow'},
-  {id:10,name:'Pattern 11', em:'',ds:'',   col:'#e8ff47',mouth:'down', eyes:'wide' },
-  {id:11,name:'Pattern 12', em:'',ds:'',   col:'#c447ff',mouth:'open', eyes:'half' },
-  {id:12,name:'Pattern 13', em:'',ds:'',   col:'#ff9c47',mouth:'slight', eyes:'half' },
+  {id:random_presets_order[0],name:'Pattern 1',    em:'',ds:'',   col:'#e8ff47',mouth:'up',   eyes:'wide' },
+  {id:random_presets_order[1],name:'Pattern 2',      em:'',ds:'',      col:'#47a3ff',mouth:'down', eyes:'half' },
+  {id:random_presets_order[2],name:'Pattern 3',em:'',ds:'',   col:'#ff9c47',mouth:'open', eyes:'wide' },
+  {id:random_presets_order[3],name:'Pattern 4',    em:'',ds:'',         col:'#ff4747',mouth:'down', eyes:'narrow'},
+  {id:random_presets_order[4],name:'Pattern 5',  em:'',ds:'',  col:'#c447ff',mouth:'slight',eyes:'wide'},
+  {id:random_presets_order[5],name:'Pattern 6',     em:'',ds:'',   col:'#47ffe8',mouth:'slight',eyes:'wide'},
+  {id:random_presets_order[6],name:'Pattern 7',   em:'',ds:'',    col:'#ff47e8',mouth:'up',   eyes:'half' },
+  {id:random_presets_order[7],name:'Pattern 8',   em:'',ds:'',    col:'#47ff9c',mouth:'down', eyes:'half' }
 ];
 
 let activePreset = 0, isRunning = false;
@@ -240,7 +242,7 @@ PRESETS.forEach(p => {
   const b = document.createElement('button');
   b.className = 'pbtn' + (p.id===0?' active':'');
   b.id = 'pb'+p.id;
-  b.innerHTML = `<span class="em">${p.em}</span><span class="nm">${p.name}</span><span class="ds">${p.ds}</span><span class="num">${p.id}</span>`;
+  b.innerHTML = `<span class="em">${p.em}</span><span class="nm">${p.name}</span><span class="ds">${p.ds}</span>`;
   b.onclick = () => selectPreset(p.id);
   pgrid.appendChild(b);
 });
@@ -268,22 +270,9 @@ function toggleFullSize() {
 // ---- FACE ------------------------------------------------
 function updateFace(id, runOverride) {
   const p = PRESETS[id];
-  const eyes = runOverride || p.eyes;
-  const mouth = runOverride ? 'slight' : p.mouth;
-  const ry = {wide:7,half:2.5,narrow:1.5}[eyes]||7;
-  document.getElementById('el').setAttribute('ry', ry);
-  document.getElementById('er').setAttribute('ry', ry);
-  const mouths = {
-    up:    'M 56 80 Q 75 70 94 80',
-    down:  'M 56 86 Q 75 94 94 86',
-    open:  'M 58 80 Q 75 94 92 80',
-    slight:'M 58 82 Q 75 87 92 82',
-  };
-  document.getElementById('mp').setAttribute('d', mouths[mouth]||mouths.slight);
   const c = p.col;
-  document.getElementById('el').setAttribute('fill', c);
-  document.getElementById('er').setAttribute('fill', c);
-  document.getElementById('mp').setAttribute('stroke', c);
+  document.getElementById('hc').setAttribute('stroke', c);
+  document.getElementById('hc').setAttribute('stroke-width', '2');
 }
 
 // ---- HEAD ROTATION ---------------------------------------
