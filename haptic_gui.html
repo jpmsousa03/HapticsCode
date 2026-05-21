@@ -1,469 +1,758 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-<meta charset="utf-8">
-<title>Haptic Emotion Controller</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap');
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg: #0e0f11; --panel: #16181c; --border: #4a505e;
-    --accent: #e8ff47; --accent2: #47ffe8; --text: #e8eaf0;
-    --muted: #5a5f6e; --danger: #ff4747;
-    --font-head: 'Syne', sans-serif; --font-mono: 'DM Mono', monospace;
-  }
-  body {
-    background: var(--bg); color: var(--text);
-    font-family: var(--font-mono); font-size: 13px;
-    min-height: 100vh; padding: 16px;
-    display: grid;
-    grid-template-columns: 260px 1fr 240px;
-    grid-template-rows: auto 1fr auto;
-    gap: 10px;
-  }
-  header {
-    grid-column: 1/-1;
-    display: flex; align-items: center; justify-content: space-between;
-    padding-bottom: 10px; border-bottom: 1px solid var(--border);
-  }
-  .logo { font-family: var(--font-head); font-size: 19px; font-weight: 800; }
-  .logo span { color: var(--accent); }
-  .dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--muted); display: inline-block;
-    margin-right: 7px; transition: background .3s;
-  }
-  .dot.on  { background: var(--accent);  box-shadow: 0 0 8px var(--accent); }
-  .dot.run { background: var(--accent2); box-shadow: 0 0 8px var(--accent2); animation: blink .5s infinite alternate; }
-  @keyframes blink { to { opacity:.3; } }
-  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
-  .ptitle { font-family: var(--font-head); font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
-
-  /* PRESETS */
-  .pgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
-  .pbtn {
-    background: transparent; border: 1px solid var(--border);
-    border-radius: 8px; padding: 11px 9px; cursor: pointer;
-    text-align: center; transition: all .15s; position: relative;
-    color: var(--text); font-family: var(--font-mono);
-  }
-  .pbtn.active { border-color: var(--accent); background: rgba(232,255,71,.07); }
-  .pbtn.running { border-color: var(--accent2); background: rgba(71,255,232,.07); }
-  .pbtn:disabled { opacity: .35; cursor: not-allowed; }
-  .pbtn .em { font-size: 18px; display: block; margin-bottom: 4px; }
-  .pbtn .nm { font-family: var(--font-head); font-size: 11px; font-weight: 700; display: block; }
-  .pbtn .ds { font-size: 9px; color: var(--muted); display: block; margin-top: 1px; }
-  .pbtn .num { position: absolute; top:7px; right:9px; font-size:12px; color:rgb(148, 148, 148); }
-  .trig {
-    width: 100%; margin-top: 8px; padding: 12px;
-    border-radius: 8px; border: 1px solid var(--accent);
-    background: rgba(232,255,71,.07); color: var(--accent);
-    font-family: var(--font-head); font-size: 12px; font-weight: 700;
-    letter-spacing: .08em; cursor: pointer; transition: all .15s;
-  }
-  .trig:hover { background: rgba(232,255,71,.15); }
-  .trig:disabled { opacity: .35; cursor: not-allowed; }
-
-  /* CENTRE */
-  #vis {
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 10px;
-  }
-  #head-svg { transition: transform .04s linear; transform-origin: center; }
-  .big-angle {
-    font-family: var(--font-head); font-size: 36px; font-weight: 800;
-    color: var(--accent); letter-spacing: -1.5px; line-height: 1;
-    text-align: center;
-  }
-  .angle-sub { font-size: 10px; color: var(--muted); text-align: center; margin-top: 2px; }
-
-  /* CHART */
-  #chartpanel { grid-column: 2; }
-  canvas#chart { width: 100%; height: 90px; display: block; }
-
-  /* PARAMS */
-  .pblock { margin-bottom: 13px; }
-  .plabel { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 11px; color: var(--muted); }
-  .plabel .v { color: var(--accent); }
-  input[type=range] {
-    width: 100%; appearance: none; height: 3px; border-radius: 2px;
-    background: var(--border); outline: none; cursor: pointer;
-  }
-  input[type=range]::-webkit-slider-thumb {
-    appearance: none; width: 13px; height: 13px; border-radius: 50%;
-    background: var(--accent); border: 2px solid var(--bg); cursor: pointer;
-  }
-
-  /* LOG */
-  #log { overflow-y: auto; max-height: 340px; font-size: 10px; line-height: 1.8; color: var(--muted); }
-  .tx { color: var(--accent); } .rx { color: var(--accent2); }
-  .err { color: var(--danger); } .sys { color: var(--muted); font-style: italic; }
-  .cmdinput {
-    width: 100%; background: var(--bg); border: 1px solid var(--border);
-    border-radius: 6px; color: var(--text); padding: 6px 8px;
-    font-family: var(--font-mono); font-size: 11px; outline: none;
-    margin-top: 8px;
-  }
-
-  /* CONNECT BAR */
-  .cbar {
-    grid-column: 1/-1;
-    display: flex; gap: 8px; align-items: center;
-    padding: 9px 12px; background: var(--panel);
-    border: 1px solid var(--border); border-radius: 8px;
-  }
-  .cbar select, .cbar input {
-    background: var(--bg); border: 1px solid var(--border);
-    border-radius: 5px; color: var(--text);
-    padding: 5px 9px; font-family: var(--font-mono); font-size: 11px; outline: none;
-  }
-  .cbtn {
-    padding: 5px 14px; border-radius: 5px; border: 1px solid var(--accent);
-    background: transparent; color: var(--accent);
-    font-family: var(--font-mono); font-size: 11px; cursor: pointer; white-space: nowrap;
-  }
-  .cbtn:hover { background: rgba(232,255,71,.1); }
-  .cnote { font-size: 10px; color: var(--muted); margin-left: auto; }
-  body.full-size #left-col { grid-column: 1 / -1; grid-row: 1 / -1; z-index: 100; height: 100vh; }
-  body.full-size #center-col, body.full-size #right-col, body.full-size header, body.full-size .cbar { display: none !important; }
-  body.full-size .pgrid { grid-template-columns: repeat(4, 1fr); gap: 15px; }
-  body.full-size .pbtn { padding: 25px 15px; }
-  body.full-size .pbtn .em { font-size: 36px; margin-bottom: 8px; }
-  body.full-size .pbtn .nm { font-size: 16px; }
-  body.full-size .pbtn .ds { font-size: 12px; }
-</style>
-</head>
-<body>
-
-<header>
-  <div class="logo">HAPTIC <span>CTRL</span> <span style="font-size:11px;color:var(--muted);font-weight:400">v4</span></div>
-  <div style="display:flex;align-items:center;gap:8px">
-    <span class="dot" id="dot"></span>
-    <span style="font-size:10px;color:var(--muted)" id="stxt">disconnected</span>
-  </div>
-</header>
-
-<!-- LEFT: Presets + params -->
-<div id="left-col" style="display:flex;flex-direction:column;gap:10px;grid-row:2;height:100%;box-sizing:border-box">
-  <div class="panel" style="height:100%; box-sizing:border-box; display:flex; flex-direction:column;">
-    <div class="ptitle" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <small id="presets-order"></small>
-      <span>Emotion Presets</span>
-      <button class="cbtn" style="padding:2px 6px; font-size:9px;" onclick="toggleFullSize()">⛶ FULL</button>
-    </div>
-    <div class="pgrid" style="flex:1; overflow-y:auto; margin-bottom:10px; box-sizing:border-box; " id="pgrid"></div>
-    <button class="trig" id="tbtn" onclick="triggerPreset()">▶ TRIGGER</button>
-  </div>
-</div>
-
-<!-- CENTRE: Head + angle + chart -->
-<div id="center-col" style="display:flex;flex-direction:column;gap:10px;grid-row:2;height:100%;box-sizing:border-box">
-  <div class="panel" id="vis" style="flex: 1; height: 100%;">
-    <svg id="head-svg" width="150" height="155" viewBox="0 0 150 155">
-      <defs>
-        <radialGradient id="hg" cx="50%" cy="38%" r="55%">
-          <stop offset="0%" stop-color="#e8ff47" stop-opacity="0.1"/>
-          <stop offset="100%" stop-color="#e8ff47" stop-opacity="0"/>
-        </radialGradient>
-        <filter id="gl"><feGaussianBlur stdDeviation="2" result="b"/>
-          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-      </defs>
-      <circle id="hc" cx="75" cy="68" r="55" fill="url(#hg)" stroke="#2a2d34" stroke-width="1"/>
-      <rect x="68" y="122" width="14" height="22" rx="3" fill="#2a2d34"/>
-    </svg>
-    <div class="big-angle" id="adeg">0.0°</div>
-    <div class="angle-sub" id="avel">vel: 0.0 rad/s</div>
-  </div>
-
-  <!-- Chart -->
-  <div class="panel" id="chartpanel">
-    <div class="ptitle">Angle History</div>
-    <canvas id="chart" width="600" height="90"></canvas>
-  </div>
-</div>
-
-<!-- RIGHT: Serial log -->
-<div id="right-col" class="panel" style="grid-row:2;display:flex;flex-direction:column">
-  <div class="ptitle" style="display:flex;justify-content:space-between">
-    <span>Serial Log</span>
-    <span style="cursor:pointer" onclick="document.getElementById('log').innerHTML=''">clear</span>
-  </div>
-  <div id="log" style="flex:1"></div>
-  <input class="cmdinput" placeholder="command (Enter to send)"
-    onkeydown="if(event.key==='Enter'){sendCmd(this.value);this.value='';}">
-</div>
-
-<!-- BOTTOM: Connect -->
-<div class="cbar">
-  <span style="font-size:10px;color:var(--muted)">PORT</span>
-  <select id="baud">
-    <option value="250000" selected>250000</option>
-    <option value="115200">115200</option>
-    <option value="230400">230400</option>
-  </select>
-  <button class="cbtn" id="cbtn" onclick="toggleConnect()">Connect</button>
-  <button class="cbtn" onclick="sendCmd('I')">Refresh</button>
-  <button class="cbtn" onclick="sendCmd('H')">Help</button>
-  <span class="cnote">Web Serial · Chrome/Edge only · firmware: 250000 baud, motor ID: M</span>
-</div>
-
-<script>
-
-const random_presets_order = randomize([0,8,1,9,5,10,4,2]);
-document.getElementById('presets-order').textContent = random_presets_order.join(', ');
-
-function randomize(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
-// ---- PRESETS ---------------------------------------------
-const PRESETS = [
-  {id:random_presets_order[0],name:'Pattern 1',    em:'',ds:'',   col:'#e8ff47',mouth:'up',   eyes:'wide' },
-  {id:random_presets_order[1],name:'Pattern 2',      em:'',ds:'',      col:'#47a3ff',mouth:'down', eyes:'half' },
-  {id:random_presets_order[2],name:'Pattern 3',em:'',ds:'',   col:'#ff9c47',mouth:'open', eyes:'wide' },
-  {id:random_presets_order[3],name:'Pattern 4',    em:'',ds:'',         col:'#ff4747',mouth:'down', eyes:'narrow'},
-  {id:random_presets_order[4],name:'Pattern 5',  em:'',ds:'',  col:'#c447ff',mouth:'slight',eyes:'wide'},
-  {id:random_presets_order[5],name:'Pattern 6',     em:'',ds:'',   col:'#47ffe8',mouth:'slight',eyes:'wide'},
-  {id:random_presets_order[6],name:'Pattern 7',   em:'',ds:'',    col:'#ff47e8',mouth:'up',   eyes:'half' },
-  {id:random_presets_order[7],name:'Pattern 8',   em:'',ds:'',    col:'#47ff9c',mouth:'down', eyes:'half' }
-];
-
-let activePreset = 0, isRunning = false;
-let port = null, writer = null;
-const angleHistory = new Array(120).fill(0);
-
-// Build preset buttons
-const pgrid = document.getElementById('pgrid');
-PRESETS.forEach(p => {
-  const b = document.createElement('button');
-  b.className = 'pbtn' + (p.id===0?' active':'');
-  b.id = 'pb'+p.id;
-  b.innerHTML = `<span class="em">${p.em}</span><span class="nm">${p.name}</span><span class="ds">${p.ds}</span><span class="num">${p.id}</span>`;
-  b.onclick = () => selectPreset(p.id);
-  pgrid.appendChild(b);
-});
-
-// ---- PRESET SELECT ---------------------------------------
-function selectPreset(id) {
-  if (isRunning) return;
-  activePreset = id;
-  document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('pb'+id)?.classList.add('active');
-  updateFace(id);
-  sendCmd('P '+id);
-}
-
-function toggleFullSize() {
-  document.body.classList.toggle('full-size');
-  const btn = document.querySelector('.ptitle button');
-  if (document.body.classList.contains('full-size')) {
-    btn.textContent = '✕ CLOSE';
-  } else {
-    btn.textContent = '⛶ FULL';
-  }
-}
-
-// ---- FACE ------------------------------------------------
-function updateFace(id, runOverride) {
-  const p = PRESETS.find(pr => pr.id === id) || PRESETS[0];
-  const c = p.col;
-  document.getElementById('hc').setAttribute('stroke', c);
-  document.getElementById('hc').setAttribute('stroke-width', '2');
-}
-
-// ---- HEAD ROTATION ---------------------------------------
-function setAngle(rad, vel) {
-  const deg = rad * 180 / Math.PI;
-  document.getElementById('head-svg').style.transform = `rotate(${deg.toFixed(1)}deg)`;
-  document.getElementById('adeg').textContent = deg.toFixed(1) + '°';
-  if (vel !== undefined)
-    document.getElementById('avel').textContent = 'vel: ' + parseFloat(vel).toFixed(1) + ' rad/s';
-  // Push to history
-  angleHistory.push(rad);
-  angleHistory.shift();
-  drawChart();
-}
-
-// ---- ANGLE CHART -----------------------------------------
-function drawChart() {
-  const canvas = document.getElementById('chart');
-  const ctx = canvas.getContext('2d');
-  const W = canvas.clientWidth * devicePixelRatio || canvas.width;
-  const H = canvas.clientHeight * devicePixelRatio || canvas.height;
-  canvas.width = W; canvas.height = H;
-
-  ctx.clearRect(0,0,W,H);
-
-  // Centre line
-  ctx.strokeStyle = '#2a2d34';
-  ctx.lineWidth = 1;
-  ctx.setLineDash([3,4]);
-  ctx.beginPath(); ctx.moveTo(0,H/2); ctx.lineTo(W,H/2); ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Angle line
-  const maxAmp = 1.57;  // PI/2 = display range
-  ctx.strokeStyle = '#e8ff47';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  angleHistory.forEach((v, i) => {
-    const x = (i / (angleHistory.length-1)) * W;
-    const y = H/2 - (v / maxAmp) * (H/2 - 6);
-    i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
-  });
-  ctx.stroke();
-
-  // Zero line label
-  ctx.fillStyle = '#5a5f6e';
-  ctx.font = `${9*devicePixelRatio}px DM Mono, monospace`;
-  ctx.fillText('0°', 4, H/2 - 4);
-}
-
-// ---- TRIGGER ---------------------------------------------
-function triggerPreset() {
-  if (isRunning) return;
-  updateFace(activePreset);
-  sendCmd('T');
-}
-
-// ---- PARAMS ----------------------------------------------
-function sendParam(cmd, val, elId, suffix) {
-  const v = parseFloat(val);
-  document.getElementById(elId).textContent = v.toFixed(1) + suffix;
-  sendCmd(`${cmd} ${v.toFixed(2)}`);
-}
-function sendAmp(deg) {
-  const rad = (parseFloat(deg) * Math.PI / 180).toFixed(3);
-  document.getElementById('va').textContent = deg + '°';
-  sendCmd(`A ${rad}`);
-}
-
-// ---- SERIAL ----------------------------------------------
-function log(msg, cls='sys') {
-  const el = document.getElementById('log');
-  const d = document.createElement('div');
-  d.className = cls; d.textContent = msg;
-  el.appendChild(d);
-  el.scrollTop = el.scrollHeight;
-  if (el.children.length > 300) el.removeChild(el.firstChild);
-}
-
-function sendCmd(cmd) {
-  if (writer) {
-    writer.write(new TextEncoder().encode(cmd+'\n'));
-  }
-  // Only log non-angle-broadcast commands to keep log clean
-  if (!cmd.startsWith('{')) log('→ '+cmd, 'tx');
-}
-
-function parseRx(line) {
-  // Skip angle-only broadcasts from cluttering the log
-  try {
-    const obj = JSON.parse(line);
-
-    // Continuous angle update — silent, just update display
-    if (obj.angle !== undefined && Object.keys(obj).length <= 2) {
-      setAngle(parseFloat(obj.angle), obj.vel);
-      return;
-    }
-
-    // Everything else gets logged
-    log('← '+line, 'rx');
-
-    if (obj.preset !== undefined) {
-      activePreset = obj.preset;
-      document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('active'));
-      document.getElementById('pb'+obj.preset)?.classList.add('active');
-      updateFace(obj.preset);
-    }
-    if (obj.gain     !== undefined) document.getElementById('vg').textContent = parseFloat(obj.gain).toFixed(1);
-    if (obj.voltage_limit !== undefined) document.getElementById('vv').textContent = parseFloat(obj.voltage_limit).toFixed(1)+' V';
-    if (obj.amplitude !== undefined) document.getElementById('va').textContent = Math.round(parseFloat(obj.amplitude)*180/Math.PI)+'°';
-    if (obj.event === 'preset_start') {
-      isRunning = true;
-      document.getElementById('tbtn').disabled = true;
-      document.querySelectorAll('.pbtn, .cbtn').forEach(b=>b.disabled = true);
-      document.getElementById('dot').className = 'dot run';
-      document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('running'));
-      document.getElementById('pb'+(obj.id??activePreset))?.classList.add('running');
-      updateFace(activePreset, 'wide');
-    }
-    if (obj.event === 'preset_done') {
-      isRunning = false;
-      document.getElementById('tbtn').disabled = false;
-      document.querySelectorAll('.pbtn, .cbtn').forEach(b=>b.disabled = false);
-      document.getElementById('dot').className = port ? 'dot on' : 'dot';
-      document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('running'));
-      document.getElementById('pb'+activePreset)?.classList.add('active');
-      updateFace(activePreset);
-    }
-    if (obj.angle !== undefined) setAngle(parseFloat(obj.angle), obj.velocity);
-  } catch(e) {
-    if (line.trim()) log('← '+line, 'rx');
-  }
-}
-
-// ---- WEB SERIAL ------------------------------------------
-async function toggleConnect() {
-  if (port) { await doDisconnect(); return; }
-  await doConnect();
-}
-async function doConnect() {
-  if (!navigator.serial) {
-    log('Web Serial not supported. Use Chrome or Edge.', 'err');
-    return;
-  }
-  try {
-    port = await navigator.serial.requestPort();
-    await port.open({ baudRate: parseInt(document.getElementById('baud').value) });
-    writer = port.writable.getWriter();
-    document.getElementById('cbtn').textContent = 'Disconnect';
-    document.getElementById('dot').className = 'dot on';
-    document.getElementById('stxt').textContent = 'connected';
-    log('Connected', 'sys');
-    readLoop();
-    setTimeout(() => sendCmd('I'), 300);
-  } catch(e) {
-    log('Failed: '+e.message, 'err');
-    port = null; writer = null;
-  }
-}
-async function doDisconnect() {
-  try { if(writer){writer.releaseLock();writer=null;} if(port){await port.close();port=null;} } catch(e){}
-  document.getElementById('cbtn').textContent = 'Connect';
-  document.getElementById('dot').className = 'dot';
-  document.getElementById('stxt').textContent = 'disconnected';
-  log('Disconnected', 'sys');
-}
-async function readLoop() {
-  const dec = new TextDecoderStream();
-  port.readable.pipeTo(dec.writable);
-  const reader = dec.readable.getReader();
-  let buf = '';
-  while (true) {
-    try {
-      const {value, done} = await reader.read();
-      if (done) break;
-      buf += value;
-      let i;
-      while ((i = buf.indexOf('\n')) >= 0) {
-        const line = buf.slice(0,i).trim();
-        if (line) parseRx(line);
-        buf = buf.slice(i+1);
+  <head>
+    <meta charset="utf-8" />
+    <title>Haptic Emotion Controller</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap");
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
       }
-    } catch(e) { break; }
-  }
-}
+      :root {
+        --bg: #0e0f11;
+        --panel: #16181c;
+        --border: #4a505e;
+        --accent: #e8ff47;
+        --accent2: #47ffe8;
+        --text: #e8eaf0;
+        --muted: #5a5f6e;
+        --danger: #ff4747;
+        --font-head: "Syne", sans-serif;
+        --font-mono: "DM Mono", monospace;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-mono);
+        font-size: 13px;
+        min-height: 100vh;
+        padding: 16px;
+        display: grid;
+        grid-template-columns: 260px 1fr 240px;
+        grid-template-rows: auto 1fr auto;
+        gap: 10px;
+      }
+      header {
+        grid-column: 1/-1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--border);
+      }
+      .logo {
+        font-family: var(--font-head);
+        font-size: 19px;
+        font-weight: 800;
+      }
+      .logo span {
+        color: var(--accent);
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--muted);
+        display: inline-block;
+        margin-right: 7px;
+        transition: background 0.3s;
+      }
+      .dot.on {
+        background: var(--accent);
+        box-shadow: 0 0 8px var(--accent);
+      }
+      .dot.run {
+        background: var(--accent2);
+        box-shadow: 0 0 8px var(--accent2);
+        animation: blink 0.5s infinite alternate;
+      }
+      @keyframes blink {
+        to {
+          opacity: 0.3;
+        }
+      }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px;
+      }
+      .ptitle {
+        font-family: var(--font-head);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 12px;
+      }
 
-// ---- INIT ------------------------------------------------
-updateFace(0);
-drawChart();
-log('Haptic Ctrl v4 — connect via Web Serial (Chrome/Edge)', 'sys');
-log('Or type commands directly in the box below', 'sys');
-</script>
-</body>
+      /* PRESETS */
+      .pgrid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 7px;
+      }
+      .pbtn {
+        background: transparent;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 11px 9px;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.15s;
+        position: relative;
+        color: var(--text);
+        font-family: var(--font-mono);
+      }
+      .pbtn.active {
+        border-color: var(--accent);
+        background: rgba(232, 255, 71, 0.07);
+      }
+      .pbtn.running {
+        border-color: var(--accent2);
+        background: rgba(71, 255, 232, 0.07);
+      }
+      .pbtn:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
+      .pbtn .em {
+        font-size: 22px;
+        display: block;
+        margin-bottom: 4px;
+      }
+      .pbtn .nm {
+        font-family: var(--font-head);
+        font-size: 12px;
+        font-weight: 700;
+        display: block;
+      }
+      .pbtn .ds {
+        font-size: 9px;
+        color: var(--muted);
+        display: block;
+        margin-top: 2px;
+      }
+      .pbtn .num {
+        position: absolute;
+        top: 7px;
+        right: 9px;
+        font-size: 11px;
+        color: #666;
+      }
+      .trig {
+        width: 100%;
+        margin-top: 8px;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid var(--accent);
+        background: rgba(232, 255, 71, 0.07);
+        color: var(--accent);
+        font-family: var(--font-head);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .trig:hover {
+        background: rgba(232, 255, 71, 0.15);
+      }
+      .trig:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
+
+      /* CENTRE */
+      #vis {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+      }
+      #head-svg {
+        transition: transform 0.04s linear;
+        transform-origin: center;
+      }
+      .big-angle {
+        font-family: var(--font-head);
+        font-size: 36px;
+        font-weight: 800;
+        color: var(--accent);
+        letter-spacing: -1.5px;
+        line-height: 1;
+        text-align: center;
+      }
+      .angle-sub {
+        font-size: 10px;
+        color: var(--muted);
+        text-align: center;
+        margin-top: 2px;
+      }
+
+      /* CHART */
+      #chartpanel {
+        grid-column: 2;
+      }
+      canvas#chart {
+        width: 100%;
+        height: 90px;
+        display: block;
+      }
+
+      /* LOG */
+      #log {
+        overflow-y: auto;
+        max-height: 340px;
+        font-size: 10px;
+        line-height: 1.8;
+        color: var(--muted);
+      }
+      .tx {
+        color: var(--accent);
+      }
+      .rx {
+        color: var(--accent2);
+      }
+      .err {
+        color: var(--danger);
+      }
+      .sys {
+        color: var(--muted);
+        font-style: italic;
+      }
+      .cmdinput {
+        width: 100%;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text);
+        padding: 6px 8px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        outline: none;
+        margin-top: 8px;
+      }
+
+      /* CONNECT BAR */
+      .cbar {
+        grid-column: 1/-1;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        padding: 9px 12px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+      }
+      .cbar select,
+      .cbar input {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        color: var(--text);
+        padding: 5px 9px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        outline: none;
+      }
+      .cbtn {
+        padding: 5px 14px;
+        border-radius: 5px;
+        border: 1px solid var(--accent);
+        background: transparent;
+        color: var(--accent);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .cbtn:hover {
+        background: rgba(232, 255, 71, 0.1);
+      }
+      .cnote {
+        font-size: 10px;
+        color: var(--muted);
+        margin-left: auto;
+      }
+
+      /* FULL SIZE MODE */
+      body.full-size #left-col {
+        grid-column: 1 / -1;
+        grid-row: 1 / -1;
+        z-index: 100;
+        height: 100vh;
+      }
+      body.full-size #center-col,
+      body.full-size #right-col,
+      body.full-size header,
+      body.full-size .cbar {
+        display: none !important;
+      }
+      body.full-size .pgrid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+      }
+      body.full-size .pbtn {
+        padding: 40px 15px;
+      }
+      body.full-size .pbtn .em {
+        font-size: 48px;
+        margin-bottom: 10px;
+      }
+      body.full-size .pbtn .nm {
+        font-size: 20px;
+      }
+      body.full-size .pbtn .ds {
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="logo">
+        HAPTIC <span>CTRL</span>
+        <span style="font-size: 11px; color: var(--muted); font-weight: 400"
+          >v5</span
+        >
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px">
+        <span class="dot" id="dot"></span>
+        <span style="font-size: 10px; color: var(--muted)" id="stxt"
+          >disconnected</span
+        >
+      </div>
+    </header>
+
+    <!-- LEFT: Presets -->
+    <div
+      id="left-col"
+      style="
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        grid-row: 2;
+        height: 100%;
+        box-sizing: border-box;
+      "
+    >
+      <div
+        class="panel"
+        style="
+          height: 100%;
+          box-sizing: border-box;
+          display: flex;
+          flex-direction: column;
+        "
+      >
+        <div
+          class="ptitle"
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+          "
+        >
+          <span>Emotion Presets</span>
+          <button
+            class="cbtn"
+            style="padding: 2px 6px; font-size: 9px"
+            onclick="toggleFullSize()"
+          >
+            ⛶ FULL
+          </button>
+        </div>
+        <div
+          class="pgrid"
+          style="
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+          "
+          id="pgrid"
+        ></div>
+        <button class="trig" id="tbtn" onclick="triggerPreset()">
+          ▶ TRIGGER
+        </button>
+      </div>
+    </div>
+
+    <!-- CENTRE: Head + angle + chart -->
+    <div
+      id="center-col"
+      style="
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        grid-row: 2;
+        height: 100%;
+        box-sizing: border-box;
+      "
+    >
+      <div class="panel" id="vis" style="flex: 1; height: 100%">
+        <svg id="head-svg" width="150" height="155" viewBox="0 0 150 155">
+          <defs>
+            <radialGradient id="hg" cx="50%" cy="38%" r="55%">
+              <stop offset="0%" stop-color="#e8ff47" stop-opacity="0.1" />
+              <stop offset="100%" stop-color="#e8ff47" stop-opacity="0" />
+            </radialGradient>
+            <filter id="gl">
+              <feGaussianBlur stdDeviation="2" result="b" />
+              <feMerge>
+                <feMergeNode in="b" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+          <circle
+            id="hc"
+            cx="75"
+            cy="68"
+            r="55"
+            fill="url(#hg)"
+            stroke="#2a2d34"
+            stroke-width="1"
+          />
+          <rect x="68" y="122" width="14" height="22" rx="3" fill="#2a2d34" />
+        </svg>
+        <div class="big-angle" id="adeg">0.0°</div>
+        <div class="angle-sub" id="avel">vel: 0.0 rad/s</div>
+      </div>
+
+      <!-- Chart -->
+      <div class="panel" id="chartpanel">
+        <div class="ptitle">Angle History</div>
+        <canvas id="chart" width="600" height="90"></canvas>
+      </div>
+    </div>
+
+    <!-- RIGHT: Serial log -->
+    <div
+      id="right-col"
+      class="panel"
+      style="grid-row: 2; display: flex; flex-direction: column"
+    >
+      <div class="ptitle" style="display: flex; justify-content: space-between">
+        <span>Serial Log</span>
+        <span
+          style="cursor: pointer"
+          onclick="document.getElementById('log').innerHTML = ''"
+          >clear</span
+        >
+      </div>
+      <div id="log" style="flex: 1"></div>
+      <input
+        class="cmdinput"
+        placeholder="command (Enter to send)"
+        onkeydown="
+          if (event.key === 'Enter') {
+            sendCmd(this.value);
+            this.value = '';
+          }
+        "
+      />
+    </div>
+
+    <!-- BOTTOM: Connect -->
+    <div class="cbar">
+      <span style="font-size: 10px; color: var(--muted)">PORT</span>
+      <select id="baud">
+        <option value="250000" selected>250000</option>
+        <option value="115200">115200</option>
+        <option value="230400">230400</option>
+      </select>
+      <button class="cbtn" id="cbtn" onclick="toggleConnect()">Connect</button>
+      <button class="cbtn" onclick="sendCmd('I')">Refresh</button>
+      <button class="cbtn" onclick="sendCmd('H')">Help</button>
+      <span class="cnote"
+        >Web Serial · Chrome/Edge only · firmware: 250000 baud, motor ID:
+        M</span
+      >
+    </div>
+
+    <script>
+      // ---- PRESETS (matching firmware switch: cases 0, 1, 5, 8) ----
+      const PRESETS = [
+        {
+          id: 0,
+          name: "Delighted",
+          em: "😄",
+          ds: "bouncy back-and-forth",
+          col: "#e8ff47",
+        },
+        {
+          id: 1,
+          name: "Unhappy",
+          em: "😔",
+          ds: "slow avoidant turn",
+          col: "#47a3ff",
+        },
+        {
+          id: 5,
+          name: "Relaxed",
+          em: "😌",
+          ds: "smooth continuous flow",
+          col: "#47ffe8",
+        },
+        {
+          id: 8,
+          name: "Angry",
+          em: "😤",
+          ds: "erratic frantic shakes",
+          col: "#ff4747",
+        },
+      ];
+
+      let activePreset = 0,
+        isRunning = false;
+      let port = null,
+        writer = null;
+      const angleHistory = new Array(120).fill(0);
+
+      // Build preset buttons
+      const pgrid = document.getElementById("pgrid");
+      PRESETS.forEach((p) => {
+        const b = document.createElement("button");
+        b.className = "pbtn" + (p.id === 0 ? " active" : "");
+        b.id = "pb" + p.id;
+        b.innerHTML = `<span class="em">${p.em}</span><span class="nm">${p.name}</span><span class="ds">${p.ds}</span><span class="num">${p.id}</span>`;
+        b.onclick = () => selectPreset(p.id);
+        pgrid.appendChild(b);
+      });
+
+      // ---- PRESET SELECT ----------------------------------------
+      function selectPreset(id) {
+        if (isRunning) return;
+        activePreset = id;
+        document
+          .querySelectorAll(".pbtn")
+          .forEach((b) => b.classList.remove("active"));
+        document.getElementById("pb" + id)?.classList.add("active");
+        updateFace(id);
+        sendCmd("P " + id);
+      }
+
+      function toggleFullSize() {
+        document.body.classList.toggle("full-size");
+        document.querySelector(".ptitle button").textContent =
+          document.body.classList.contains("full-size") ? "✕ CLOSE" : "⛶ FULL";
+      }
+
+      // ---- FACE -------------------------------------------------
+      function updateFace(id) {
+        const p = PRESETS.find((pr) => pr.id === id) || PRESETS[0];
+        document.getElementById("hc").setAttribute("stroke", p.col);
+        document.getElementById("hc").setAttribute("stroke-width", "2");
+      }
+
+      // ---- HEAD ROTATION ----------------------------------------
+      function setAngle(rad, vel) {
+        const deg = (rad * 180) / Math.PI;
+        document.getElementById("head-svg").style.transform =
+          `rotate(${deg.toFixed(1)}deg)`;
+        document.getElementById("adeg").textContent = deg.toFixed(1) + "°";
+        if (vel !== undefined)
+          document.getElementById("avel").textContent =
+            "vel: " + parseFloat(vel).toFixed(1) + " rad/s";
+        angleHistory.push(rad);
+        angleHistory.shift();
+        drawChart();
+      }
+
+      // ---- ANGLE CHART ------------------------------------------
+      function drawChart() {
+        const canvas = document.getElementById("chart");
+        const ctx = canvas.getContext("2d");
+        const W = canvas.clientWidth * devicePixelRatio || canvas.width;
+        const H = canvas.clientHeight * devicePixelRatio || canvas.height;
+        canvas.width = W;
+        canvas.height = H;
+        ctx.clearRect(0, 0, W, H);
+
+        ctx.strokeStyle = "#2a2d34";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 4]);
+        ctx.beginPath();
+        ctx.moveTo(0, H / 2);
+        ctx.lineTo(W, H / 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        const maxAmp = 1.57;
+        ctx.strokeStyle = "#e8ff47";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        angleHistory.forEach((v, i) => {
+          const x = (i / (angleHistory.length - 1)) * W;
+          const y = H / 2 - (v / maxAmp) * (H / 2 - 6);
+          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        ctx.fillStyle = "#5a5f6e";
+        ctx.font = `${9 * devicePixelRatio}px DM Mono, monospace`;
+        ctx.fillText("0°", 4, H / 2 - 4);
+      }
+
+      // ---- TRIGGER ----------------------------------------------
+      function triggerPreset() {
+        if (isRunning) return;
+        sendCmd("T");
+      }
+
+      // ---- SERIAL -----------------------------------------------
+      function log(msg, cls = "sys") {
+        const el = document.getElementById("log");
+        const d = document.createElement("div");
+        d.className = cls;
+        d.textContent = msg;
+        el.appendChild(d);
+        el.scrollTop = el.scrollHeight;
+        if (el.children.length > 300) el.removeChild(el.firstChild);
+      }
+
+      function sendCmd(cmd) {
+        if (writer) writer.write(new TextEncoder().encode(cmd + "\n"));
+        if (!cmd.startsWith("{")) log("→ " + cmd, "tx");
+      }
+
+      function parseRx(line) {
+        try {
+          const obj = JSON.parse(line);
+
+          if (obj.angle !== undefined && Object.keys(obj).length <= 2) {
+            setAngle(parseFloat(obj.angle), obj.vel);
+            return;
+          }
+
+          log("← " + line, "rx");
+
+          if (obj.preset !== undefined) {
+            activePreset = obj.preset;
+            document
+              .querySelectorAll(".pbtn")
+              .forEach((b) => b.classList.remove("active"));
+            document.getElementById("pb" + obj.preset)?.classList.add("active");
+            updateFace(obj.preset);
+          }
+          if (obj.event === "preset_start") {
+            isRunning = true;
+            document.getElementById("tbtn").disabled = true;
+            document
+              .querySelectorAll(".pbtn, .cbtn")
+              .forEach((b) => (b.disabled = true));
+            document.getElementById("dot").className = "dot run";
+            document
+              .querySelectorAll(".pbtn")
+              .forEach((b) => b.classList.remove("running"));
+            document
+              .getElementById("pb" + (obj.id ?? activePreset))
+              ?.classList.add("running");
+            updateFace(activePreset);
+          }
+          if (obj.event === "preset_done") {
+            isRunning = false;
+            document.getElementById("tbtn").disabled = false;
+            document
+              .querySelectorAll(".pbtn, .cbtn")
+              .forEach((b) => (b.disabled = false));
+            document.getElementById("dot").className = port ? "dot on" : "dot";
+            document
+              .querySelectorAll(".pbtn")
+              .forEach((b) => b.classList.remove("running"));
+            document
+              .getElementById("pb" + activePreset)
+              ?.classList.add("active");
+            updateFace(activePreset);
+          }
+          if (obj.angle !== undefined)
+            setAngle(parseFloat(obj.angle), obj.velocity);
+        } catch (e) {
+          if (line.trim()) log("← " + line, "rx");
+        }
+      }
+
+      // ---- WEB SERIAL -------------------------------------------
+      async function toggleConnect() {
+        if (port) {
+          await doDisconnect();
+          return;
+        }
+        await doConnect();
+      }
+      async function doConnect() {
+        if (!navigator.serial) {
+          log("Web Serial not supported. Use Chrome or Edge.", "err");
+          return;
+        }
+        try {
+          port = await navigator.serial.requestPort();
+          await port.open({
+            baudRate: parseInt(document.getElementById("baud").value),
+          });
+          writer = port.writable.getWriter();
+          document.getElementById("cbtn").textContent = "Disconnect";
+          document.getElementById("dot").className = "dot on";
+          document.getElementById("stxt").textContent = "connected";
+          log("Connected", "sys");
+          readLoop();
+          setTimeout(() => sendCmd("I"), 300);
+        } catch (e) {
+          log("Failed: " + e.message, "err");
+          port = null;
+          writer = null;
+        }
+      }
+      async function doDisconnect() {
+        try {
+          if (writer) {
+            writer.releaseLock();
+            writer = null;
+          }
+          if (port) {
+            await port.close();
+            port = null;
+          }
+        } catch (e) {}
+        document.getElementById("cbtn").textContent = "Connect";
+        document.getElementById("dot").className = "dot";
+        document.getElementById("stxt").textContent = "disconnected";
+        log("Disconnected", "sys");
+      }
+      async function readLoop() {
+        const dec = new TextDecoderStream();
+        port.readable.pipeTo(dec.writable);
+        const reader = dec.readable.getReader();
+        let buf = "";
+        while (true) {
+          try {
+            const { value, done } = await reader.read();
+            if (done) break;
+            buf += value;
+            let i;
+            while ((i = buf.indexOf("\n")) >= 0) {
+              const line = buf.slice(0, i).trim();
+              if (line) parseRx(line);
+              buf = buf.slice(i + 1);
+            }
+          } catch (e) {
+            break;
+          }
+        }
+      }
+
+      // ---- INIT -------------------------------------------------
+      updateFace(0);
+      drawChart();
+      log("Haptic Ctrl v5 — connect via Web Serial (Chrome/Edge)", "sys");
+    </script>
+  </body>
 </html>
