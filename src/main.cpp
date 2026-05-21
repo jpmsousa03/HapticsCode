@@ -201,20 +201,46 @@ int append_ending(Step *tmp, int tmp_len, int idx)
   return tmp_len;
 }
 
-void build_pattern1() //angry
+void build_pattern0() //  delighted (before 1-angry)
 {
-  Step tmp[MAX_STEPS / REPEAT_COUNT];
+ Step tmp[MAX_STEPS / REPEAT_COUNT];
   int tmp_len = 0;
-  for (int i = 0; i < 6; i++)
+
+  for (int i = 0; i < 3; i++)
   {
+    // Fast swing to positive corner (from pattern1's energy)
     tmp[tmp_len++] = {0.55f, 100};
+
+    // Basketball bounce settle at positive corner (from pattern3)
+    tmp[tmp_len++] = {0.25f, 180}; // Big rebound
+    tmp[tmp_len++] = {0.55f, 180};
+    tmp[tmp_len++] = {0.38f, 120}; // Medium rebound
+    tmp[tmp_len++] = {0.55f, 120};
+    tmp[tmp_len++] = {0.48f, 70};  // Small rebound
+    tmp[tmp_len++] = {0.55f, 70};
+    tmp[tmp_len++] = {0.53f, 30};  // Micro-bounce to settle
+    tmp[tmp_len++] = {0.55f, 30};
+
+    // Fast swing to negative corner
     tmp[tmp_len++] = {-0.55f, 100};
+
+    // Basketball bounce settle at negative corner
+    tmp[tmp_len++] = {-0.25f, 180};
+    tmp[tmp_len++] = {-0.55f, 180};
+    tmp[tmp_len++] = {-0.38f, 120};
+    tmp[tmp_len++] = {-0.55f, 120};
+    tmp[tmp_len++] = {-0.48f, 70};
+    tmp[tmp_len++] = {-0.55f, 70};
+    tmp[tmp_len++] = {-0.53f, 30};
+    tmp[tmp_len++] = {-0.55f, 30};
   }
+
+  tmp[tmp_len++] = {0.0f, 400}; // Settle to center
   tmp_len = append_ending(tmp, tmp_len, 0);
   repeat_into_seq(tmp, tmp_len);
 }
 
-void build_pattern2() //unhappy
+void build_pattern1() //unhappy (before 2-unhappy)
 {
   Step tmp[MAX_STEPS / REPEAT_COUNT];
   int tmp_len = 0;
@@ -235,95 +261,8 @@ void build_pattern2() //unhappy
   repeat_into_seq(tmp, tmp_len);
 }
 
-void build_pattern3() //delighted
-{
-  Step tmp[MAX_STEPS / REPEAT_COUNT];
-  int tmp_len = 0;
-  for (int i = 0; i < 3; i++)
-  {
-    // 1. Rapid approach to the corner
-    tmp[tmp_len++] = {1.0f, 600};
 
-    // BASKETBALL ELASTICITY (Top)
-    // Notice how the duration (hang time) matches the distance traveled
-    tmp[tmp_len++] = {0.40f, 180}; // Big rebound
-    tmp[tmp_len++] = {1.0f, 180};  // Hit corner again
-
-    tmp[tmp_len++] = {0.70f, 120}; // Medium rebound
-    tmp[tmp_len++] = {1.0f, 120};  // Hit corner again
-
-    tmp[tmp_len++] = {0.88f, 70}; // Small rebound
-    tmp[tmp_len++] = {1.0f, 70};  // Hit corner again
-
-    tmp[tmp_len++] = {0.96f, 30}; // Micro-bounce to settle
-    tmp[tmp_len++] = {1.0f, 30};
-
-    // 2. Rapid approach to the opposite corner
-    tmp[tmp_len++] = {-1.0f, 600};
-
-    // BASKETBALL ELASTICITY (Bottom)
-    tmp[tmp_len++] = {-0.40f, 180};
-    tmp[tmp_len++] = {-1.0f, 180};
-    tmp[tmp_len++] = {-0.70f, 120};
-    tmp[tmp_len++] = {-1.0f, 120};
-    tmp[tmp_len++] = {-0.88f, 70};
-    tmp[tmp_len++] = {-1.0f, 70};
-    tmp[tmp_len++] = {-0.96f, 30};
-    tmp[tmp_len++] = {-1.0f, 30};
-  }
-
-  // Settle back to center
-  tmp[tmp_len++] = {0.0f, 400};
-  tmp_len = append_ending(tmp, tmp_len, 2);
-  repeat_into_seq(tmp, tmp_len);
-}
-
-void build_pattern4() //relaxed
-{
-  Step tmp[MAX_STEPS / REPEAT_COUNT]; 
-  int tmp_len = 0;
-  tmp[tmp_len++] = {6.28f, 3000};
-  tmp[tmp_len++] = {0.0f, 3000}; // Relaxed pause 
-
-
-
-  tmp_len = append_ending(tmp, tmp_len, 1);
-  repeat_into_seq(tmp, tmp_len);
-}
-
-void build_pattern5() { //delighted (curious)
-  Step tmp[MAX_STEPS / REPEAT_COUNT];
-  int tmp_len = 0;
-
-  // --- Right side ---
-  tmp[tmp_len++] = { 0.35f, 800};   // slowly tilt right
-  tmp[tmp_len++] = { 0.45f,  80};   // jiggle up
-  tmp[tmp_len++] = { 0.25f,  80};   // jiggle down
-  tmp[tmp_len++] = { 0.45f,  80};   // jiggle up
-  tmp[tmp_len++] = { 0.25f,  80};   // jiggle down
-  tmp[tmp_len++] = { 0.45f,  80};   // jiggle up
-  tmp[tmp_len++] = { 0.20f, 150};   // bounce dip
-  tmp[tmp_len++] = { 0.35f, 200};   // bounce back
-  tmp[tmp_len++] = { 0.35f, 600};   // hold and look curiously
-  tmp[tmp_len++] = { 0.0f,  800};   // slowly return to center
-
-  // --- Left side (mirror) ---
-  tmp[tmp_len++] = {-0.35f, 800};
-  tmp[tmp_len++] = {-0.45f,  80};
-  tmp[tmp_len++] = {-0.25f,  80};
-  tmp[tmp_len++] = {-0.45f,  80};
-  tmp[tmp_len++] = {-0.25f,  80};
-  tmp[tmp_len++] = {-0.45f,  80};
-  tmp[tmp_len++] = {-0.20f, 150};
-  tmp[tmp_len++] = {-0.35f, 200};
-  tmp[tmp_len++] = {-0.35f, 600};
-  tmp[tmp_len++] = { 0.0f,  800};   // slowly return to center
-
-  tmp_len = append_ending(tmp, tmp_len, 4);  // uses emo[4] for overshoot/jitter
-  repeat_into_seq(tmp, tmp_len);
-}
-
-void build_pattern6() // relaxed
+void build_pattern5() // relaxed (before 6-relaxed)
 {
   Step tmp[MAX_STEPS / REPEAT_COUNT]; 
   int tmp_len = 0;
@@ -336,202 +275,59 @@ void build_pattern6() // relaxed
   repeat_into_seq(tmp, tmp_len);
 }
 
-void build_pattern7() // unhappy
-{
-  Step tmp[MAX_STEPS / REPEAT_COUNT]; 
-  int tmp_len = 0;
 
-  tmp[tmp_len++] = {-0.60f, 1400};  // heavier drop, slightly faster
-  tmp[tmp_len++] = {-0.45f, 250};   // weak rebound (more “snap back”)
-  tmp[tmp_len++] = {-0.56f, 1200};  // re-collapse (less smooth, more decisive)
-
-  tmp[tmp_len++] = {0.0f, 500};     // abrupt break toward center
-  tmp[tmp_len++] = {0.0f, 2200};    // slow after-settle (dragging feeling)
-
-  tmp_len = append_ending(tmp, tmp_len, 1);
-  repeat_into_seq(tmp, tmp_len);
-}
-// Pattern 9 (ANGRY)
-// Sharp alternating motion - aggressive but SAFE
-// Deliberate left-right swings with holds, no fast oscillation
-void build_pattern9()
+void build_pattern8() // angry (before 9- angry)
 {
   Step tmp[MAX_STEPS / REPEAT_COUNT];
   int tmp_len = 0;
-  float amp     = 0.8f;
-  int move_ms   = 250;
-  int hold_ms   = 150;
 
-  // 6 deliberate alternating movements - aggressive but safe
-  for (int i = 0; i < 6; i++)
-  {
-    float dir = (i % 2 == 0) ? -1.0f : 1.0f;
-    tmp[tmp_len++] = {dir * amp, move_ms};  // Move to position
-    tmp[tmp_len++] = {dir * amp, hold_ms};  // Hold at position
-  }
+  // Burst 1 — escalating erratic shakes, no holds
+  tmp[tmp_len++] = {-0.75f, 80};
+  tmp[tmp_len++] = { 0.95f, 65};
+  tmp[tmp_len++] = {-1.00f, 55};
+  tmp[tmp_len++] = { 0.80f, 70};
+  tmp[tmp_len++] = {-0.90f, 50};
+  tmp[tmp_len++] = { 1.00f, 60};
 
-  // Extra settle time before ending to prevent retrigger
-  tmp[tmp_len++] = {0.0f, 500};
-  
+  // Burst 2 — direction changes become even less predictable
+  tmp[tmp_len++] = {-0.85f, 45};
+  tmp[tmp_len++] = { 0.70f, 75};
+  tmp[tmp_len++] = {-1.00f, 40};
+  tmp[tmp_len++] = { 0.60f, 55};
+  tmp[tmp_len++] = {-0.95f, 50};
+  tmp[tmp_len++] = { 1.00f, 45};
+
+  // Burst 3 — peak frenzy, shortest intervals
+  tmp[tmp_len++] = {-0.80f, 35};
+  tmp[tmp_len++] = { 1.00f, 40};
+  tmp[tmp_len++] = {-0.90f, 35};
+  tmp[tmp_len++] = { 0.85f, 35};
+  tmp[tmp_len++] = {-1.00f, 30};
+  tmp[tmp_len++] = { 0.75f, 35};
+
+  // Abrupt stop — anger doesn't wind down gently
+  tmp[tmp_len++] = {0.0f, 200};
+
   tmp_len = append_ending(tmp, tmp_len, 8);
   repeat_into_seq(tmp, tmp_len);
 }
 
-// Pattern 10 (DELIGHTED)
-// Happy nodding - energetic but SAFE
-// Smooth swings with gentle settle, no fast oscillation
-void build_pattern10()
-{
-  Step tmp[MAX_STEPS / REPEAT_COUNT];
-  int tmp_len = 0;
-  float amp         = 0.7f;
-  int swing_out_ms  = 300;
-  int settle_ms     = 150;
-  int swing_back_ms = 300;
-  int pause_ms      = 200;
-
-  // 5 happy nods alternating direction - safe timing
-  for (int i = 0; i < 5; i++)
-  {
-    float dir = (i % 2 == 0) ? -1.0f : 1.0f;
-    // Swing out to side
-    tmp[tmp_len++] = {dir * amp, swing_out_ms};
-    // Settle at side
-    tmp[tmp_len++] = {dir * amp, settle_ms};
-    // Swing back to center
-    tmp[tmp_len++] = {0.0f, swing_back_ms};
-    // Pause at center
-    tmp[tmp_len++] = {0.0f, pause_ms};
-  }
-
-  tmp_len = append_ending(tmp, tmp_len, 9);
-  repeat_into_seq(tmp, tmp_len);
-}
-
-// Pattern 11 (RELAXED)
-// Deep breathing - SLOW, SMOOTH, MEDITATIVE
-// Long inhale, peaceful hold, slow exhale
-void build_pattern11()
-{
-  Step tmp[MAX_STEPS / REPEAT_COUNT];
-  int tmp_len = 0;
-  float amp     = 0.6f;
-  int inhale_ms = 1500;
-  int hold_ms   = 400;
-  int exhale_ms = 1800;
-
-  // 3 deep breath cycles - slow and peaceful
-  for (int i = 0; i < 3; i++)
-  {
-    // Gradual inhale with slight acceleration in middle
-    tmp[tmp_len++] = {amp * 0.3f, inhale_ms / 3};
-    tmp[tmp_len++] = {amp * 0.7f, inhale_ms / 3};
-    tmp[tmp_len++] = {amp, inhale_ms / 3};
-    // Peaceful hold at full inhale
-    tmp[tmp_len++] = {amp, hold_ms};
-    // Slow exhale
-    tmp[tmp_len++] = {amp * 0.5f, exhale_ms / 2};
-    tmp[tmp_len++] = {0.0f, exhale_ms / 2};
-    // Rest at center
-    tmp[tmp_len++] = {0.0f, hold_ms};
-  }
-
-  tmp_len = append_ending(tmp, tmp_len, 10);
-  repeat_into_seq(tmp, tmp_len);
-}
-
-// Pattern 12 (UNHAPPY)
-// Dejected looking away - rotate to one side, wait, rotate to other side
-// Does NOT return to center between sides - continuous avoidance
-void build_pattern12()
-{
-  Step tmp[MAX_STEPS / REPEAT_COUNT];
-  int tmp_len = 0;
-  float amp        = 0.5f;
-  int turn_ms      = 1200;
-  int base_wait_ms = 800;
-
-  // Pseudo-random wait times (deterministic but varied)
-  // Using different multipliers for organic feel
-  int wait_times[] = {800, 1200, 600, 1000, 900};
-  
-  // Start looking left
-  tmp[tmp_len++] = {-amp, turn_ms};
-  tmp[tmp_len++] = {-amp, base_wait_ms + wait_times[0]};
-  
-  // Slowly rotate to right (through center, but don't stop)
-  tmp[tmp_len++] = {amp, turn_ms * 2};  // Longer because traveling full distance
-  tmp[tmp_len++] = {amp, base_wait_ms + wait_times[1]};
-  
-  // Back to left
-  tmp[tmp_len++] = {-amp, turn_ms * 2};
-  tmp[tmp_len++] = {-amp, base_wait_ms + wait_times[2]};
-  
-  // To right again
-  tmp[tmp_len++] = {amp, turn_ms * 2};
-  tmp[tmp_len++] = {amp, base_wait_ms + wait_times[3]};
-  
-  // Final slow return to center
-  tmp[tmp_len++] = {0.0f, turn_ms};
-
-  tmp_len = append_ending(tmp, tmp_len, 11);
-  repeat_into_seq(tmp, tmp_len);
-}
 
 void start_preset(int id)
 {
   switch (id)
   {
   case 0:
-    build_pattern1(); 
+    build_pattern0(); 
     break;
   case 1:
-    build_pattern2();
-    break;
-  case 2:
-    build_pattern3();
-    break;
-  case 3:
-    build_pattern4();
-    break;
-  case 4:
-    build_pattern5();
+    build_pattern1();
     break;
   case 5:
-    build_pattern6();
-    break;
-  case 6:
-    build_pattern7();
-    break;
-  case 7:
-    // empty patterns for now
-    {
-      Step tmp[MAX_STEPS / REPEAT_COUNT];
-      int tmp_len = 0;
-      tmp_len = append_ending(tmp, tmp_len, id);
-      repeat_into_seq(tmp, tmp_len);
-    }
+    build_pattern5();
     break;
   case 8:
-    build_pattern9();
-    break;
-  case 9:
-    build_pattern10();
-    break;
-  case 10:
-    build_pattern11();
-    break;
-  case 11:
-    build_pattern12();
-    break;
-  case 12:
-    // empty pattern for now
-    {
-      Step tmp[MAX_STEPS / REPEAT_COUNT];
-      int tmp_len = 0;
-      tmp_len = append_ending(tmp, tmp_len, id);
-      repeat_into_seq(tmp, tmp_len);
-    }
+    build_pattern8();
     break;
   default:
     return;
