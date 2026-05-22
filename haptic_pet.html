@@ -1,0 +1,1225 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Haptic Pet</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&family=DM+Mono:wght@400;500&display=swap");
+      *, *::before, *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --bg: #1a1a2e;
+        --panel: #16213e;
+        --border: #0f3460;
+        --text: #eaeaea;
+        --muted: #7f8c8d;
+        --relaxed: #47ffe8;
+        --delighted: #e8ff47;
+        --unhappy: #47a3ff;
+        --angry: #ff4747;
+        --hunger: #ff9f47;
+        --happiness: #e8ff47;
+        --energy: #47ffe8;
+        --cleanliness: #ff47a3;
+        --font-main: "Nunito", sans-serif;
+        --font-mono: "DM Mono", monospace;
+      }
+      html, body {
+        height: 100%;
+        overflow: hidden;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-main);
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Header */
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 20px;
+        border-bottom: 1px solid var(--border);
+        background: var(--panel);
+        flex-shrink: 0;
+      }
+      .logo {
+        font-size: 20px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .logo span { color: var(--delighted); }
+      .header-controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .status-indicator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--muted);
+        transition: all 0.3s;
+      }
+      .dot.on {
+        background: var(--delighted);
+        box-shadow: 0 0 10px var(--delighted);
+      }
+      .dot.run {
+        background: var(--energy);
+        box-shadow: 0 0 10px var(--energy);
+        animation: pulse 0.5s infinite alternate;
+      }
+      @keyframes pulse { to { opacity: 0.4; } }
+
+      .mute-btn {
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--muted);
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .mute-btn:hover {
+        border-color: var(--text);
+        color: var(--text);
+      }
+      .mute-btn.muted {
+        color: var(--angry);
+        border-color: var(--angry);
+      }
+
+      /* Main game area */
+      main {
+        flex: 1;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-rows: 1fr 1fr 1fr;
+        gap: 0;
+        padding: 20px;
+        position: relative;
+        min-height: 0;
+      }
+
+      /* Corner buttons */
+      .action-btn {
+        position: relative;
+        background: var(--panel);
+        border: 2px solid var(--border);
+        border-radius: 16px;
+        padding: 20px 16px;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.15s ease;
+        overflow: hidden;
+        color: var(--text);
+        font-family: var(--font-main);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+      }
+      .action-btn::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at center, var(--btn-color-alpha, transparent), transparent 70%);
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      .action-btn:hover::before { opacity: 1; }
+      .action-btn:hover {
+        transform: scale(1.02);
+        box-shadow: 0 8px 25px var(--btn-color-alpha);
+      }
+      .action-btn:active { transform: scale(0.98); }
+      .action-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+      .action-btn.feeding {
+        box-shadow: 0 0 30px var(--btn-color);
+      }
+      .action-btn.active {
+        border-color: var(--btn-color);
+        box-shadow: 0 0 20px var(--btn-color-alpha);
+      }
+
+      .btn-relaxed {
+        grid-column: 1; grid-row: 1;
+        --btn-color: var(--relaxed);
+        --btn-color-alpha: rgba(71, 255, 232, 0.2);
+        border-color: var(--relaxed);
+      }
+      .btn-delighted {
+        grid-column: 3; grid-row: 1;
+        --btn-color: var(--delighted);
+        --btn-color-alpha: rgba(232, 255, 71, 0.2);
+        border-color: var(--delighted);
+      }
+      .btn-unhappy {
+        grid-column: 1; grid-row: 3;
+        --btn-color: var(--unhappy);
+        --btn-color-alpha: rgba(71, 163, 255, 0.2);
+        border-color: var(--unhappy);
+      }
+      .btn-angry {
+        grid-column: 3; grid-row: 3;
+        --btn-color: var(--angry);
+        --btn-color-alpha: rgba(255, 71, 71, 0.2);
+        border-color: var(--angry);
+      }
+
+      .btn-emoji {
+        font-size: 42px;
+        display: block;
+        margin-bottom: 8px;
+        transition: transform 0.2s;
+      }
+      .action-btn:hover .btn-emoji { transform: scale(1.1); }
+      .btn-action {
+        font-size: 18px;
+        font-weight: 700;
+        display: block;
+        min-height: 26px;
+      }
+      .btn-action.changing {
+        animation: text-swap 0.4s ease-in-out;
+      }
+      @keyframes text-swap {
+        0% { transform: translateY(0); opacity: 1; }
+        40% { transform: translateY(-15px); opacity: 0; }
+        60% { transform: translateY(15px); opacity: 0; }
+        100% { transform: translateY(0); opacity: 1; }
+      }
+
+      /* Center pet area */
+      .pet-center {
+        grid-column: 2;
+        grid-row: 1 / 4;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        z-index: 5;
+      }
+
+      #head-svg {
+        width: 200px;
+        height: 210px;
+        transition: transform 0.04s linear;
+        transform-origin: center;
+        filter: drop-shadow(0 0 30px rgba(232, 255, 71, 0.3));
+      }
+      .mood-ring { transition: all 0.5s ease; }
+
+      @keyframes breathe {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.03); }
+      }
+      .pet-center:not(.animating) #head-svg {
+        animation: breathe 3s ease-in-out infinite;
+      }
+
+      .angle-display {
+        font-family: var(--font-mono);
+        font-size: 32px;
+        font-weight: 800;
+        color: var(--delighted);
+        margin-top: 10px;
+      }
+      .angle-sub {
+        font-size: 12px;
+        color: var(--muted);
+        font-family: var(--font-mono);
+      }
+
+      /* Manual trigger button */
+      .manual-btn {
+        margin-top: 20px;
+        padding: 12px 28px;
+        border-radius: 10px;
+        border: 2px solid var(--delighted);
+        background: rgba(232, 255, 71, 0.1);
+        color: var(--delighted);
+        font-family: var(--font-main);
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .manual-btn:hover {
+        background: rgba(232, 255, 71, 0.2);
+        box-shadow: 0 0 20px rgba(232, 255, 71, 0.3);
+      }
+      .manual-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      /* Pipeline SVG overlay */
+      #pipeline-svg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+      }
+      .pipeline {
+        fill: none;
+        stroke: var(--border);
+        stroke-width: 4;
+        stroke-linecap: round;
+      }
+      .pipeline.active {
+        stroke: var(--pipe-color);
+        filter: drop-shadow(0 0 6px var(--pipe-color));
+      }
+
+      /* Pipeline emoji particles */
+      .pipe-emoji {
+        position: absolute;
+        font-size: 24px;
+        pointer-events: none;
+        z-index: 20;
+        filter: drop-shadow(0 0 4px rgba(255,255,255,0.5));
+        transition: none;
+      }
+
+      /* Status bars - top center */
+      .status-bar-container {
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 10px 16px;
+        z-index: 50;
+        display: flex;
+        gap: 20px;
+        align-items: center;
+      }
+      .status-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .status-icon { font-size: 14px; }
+      .status-track {
+        width: 60px;
+        height: 8px;
+        background: rgba(0,0,0,0.3);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .status-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.5s ease-out;
+      }
+      .status-fill.flash {
+        animation: stat-flash 0.4s ease-out;
+      }
+      @keyframes stat-flash {
+        0% { filter: brightness(1); }
+        50% { filter: brightness(1.5); }
+        100% { filter: brightness(1); }
+      }
+      .status-fill.critical {
+        animation: bar-pulse 0.8s infinite;
+      }
+      @keyframes bar-pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+      }
+      .fill-hunger { background: linear-gradient(90deg, #ff6b35, var(--hunger)); }
+      .fill-happiness { background: linear-gradient(90deg, #c4d600, var(--happiness)); }
+      .fill-energy { background: linear-gradient(90deg, #00b4d8, var(--energy)); }
+      .fill-cleanliness { background: linear-gradient(90deg, #e040fb, var(--cleanliness)); }
+
+      /* Connection bar */
+      .connect-bar {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        padding: 10px 20px;
+        background: var(--panel);
+        border-top: 1px solid var(--border);
+        flex-shrink: 0;
+      }
+      .connect-bar select {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text);
+        padding: 6px 10px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+      }
+      .connect-btn {
+        padding: 6px 16px;
+        border-radius: 6px;
+        border: 1px solid var(--delighted);
+        background: transparent;
+        color: var(--delighted);
+        font-family: var(--font-main);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .connect-btn:hover {
+        background: rgba(232, 255, 71, 0.1);
+      }
+      .connect-note {
+        margin-left: auto;
+        font-size: 10px;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="logo">🐾 HAPTIC <span>PET</span></div>
+      <div class="header-controls">
+        <button class="mute-btn" id="mute-btn" onclick="toggleMute()" title="Toggle Sound">🔊</button>
+        <div class="status-indicator">
+          <span class="dot" id="dot"></span>
+          <span id="stxt">disconnected</span>
+        </div>
+      </div>
+    </header>
+
+    <main id="game-area">
+      <!-- Pipeline SVG - drawn dynamically -->
+      <svg id="pipeline-svg"></svg>
+
+      <!-- Corner buttons -->
+      <button class="action-btn btn-relaxed" id="btn-relaxed" onclick="triggerAction('relaxed')">
+        <span class="btn-emoji">💤</span>
+        <span class="btn-action" id="action-relaxed">Pet</span>
+      </button>
+
+      <button class="action-btn btn-delighted" id="btn-delighted" onclick="triggerAction('delighted')">
+        <span class="btn-emoji">🎉</span>
+        <span class="btn-action" id="action-delighted">Treat</span>
+      </button>
+
+      <!-- Center pet -->
+      <div class="pet-center" id="pet-center">
+        <svg id="head-svg" viewBox="0 0 150 155">
+          <defs>
+            <radialGradient id="hg" cx="50%" cy="38%" r="55%">
+              <stop offset="0%" stop-color="#e8ff47" stop-opacity="0.15" />
+              <stop offset="100%" stop-color="#e8ff47" stop-opacity="0" />
+            </radialGradient>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+          <circle class="mood-ring" id="mood-ring" cx="75" cy="68" r="62" fill="none" stroke="#e8ff47" stroke-width="4" opacity="0.6" filter="url(#glow)" />
+          <circle id="hc" cx="75" cy="68" r="55" fill="url(#hg)" stroke="#2a2d34" stroke-width="2" />
+          <rect x="68" y="128" width="14" height="18" rx="4" fill="#2a2d34" />
+        </svg>
+        <div class="angle-display" id="adeg">0.0°</div>
+        <div class="angle-sub" id="avel">vel: 0.0 rad/s</div>
+        <button class="manual-btn" id="manual-btn" onclick="manualTrigger()">▶ MANUAL MOTION</button>
+      </div>
+
+      <button class="action-btn btn-unhappy" id="btn-unhappy" onclick="triggerAction('unhappy')">
+        <span class="btn-emoji">💔</span>
+        <span class="btn-action" id="action-unhappy">Ignore</span>
+      </button>
+
+      <button class="action-btn btn-angry" id="btn-angry" onclick="triggerAction('angry')">
+        <span class="btn-emoji">😤</span>
+        <span class="btn-action" id="action-angry">Poke</span>
+      </button>
+
+      <!-- Status bars - top center -->
+      <div class="status-bar-container">
+        <div class="status-item">
+          <span class="status-icon">🍖</span>
+          <div class="status-track">
+            <div class="status-fill fill-hunger" id="fill-hunger" style="width: 80%"></div>
+          </div>
+        </div>
+        <div class="status-item">
+          <span class="status-icon">😊</span>
+          <div class="status-track">
+            <div class="status-fill fill-happiness" id="fill-happiness" style="width: 80%"></div>
+          </div>
+        </div>
+        <div class="status-item">
+          <span class="status-icon">⚡</span>
+          <div class="status-track">
+            <div class="status-fill fill-energy" id="fill-energy" style="width: 80%"></div>
+          </div>
+        </div>
+        <div class="status-item">
+          <span class="status-icon">✨</span>
+          <div class="status-track">
+            <div class="status-fill fill-cleanliness" id="fill-cleanliness" style="width: 80%"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <div class="connect-bar">
+      <select id="baud">
+        <option value="250000" selected>250000</option>
+        <option value="115200">115200</option>
+      </select>
+      <button class="connect-btn" id="cbtn" onclick="toggleConnect()">Connect</button>
+      <button class="connect-btn" onclick="resetGame()" style="border-color: var(--angry); color: var(--angry);">Reset</button>
+      <span class="connect-note">Web Serial · Chrome/Edge only</span>
+    </div>
+
+    <script>
+      // ============================================================
+      //  CONFIGURATION
+      // ============================================================
+      const AUDIO_CONFIG = {
+        relaxed:   { file: 'relaxed.mp3',   volume: 0.7 },
+        delighted: { file: 'delighted.mp3', volume: 0.8 },
+        unhappy:   { file: 'unhappy.mp3',   volume: 0.6 },
+        angry:     { file: 'angry.mp3',     volume: 0.75 }
+      };
+
+      const PRESET_TO_EMOTION = { 0: 'delighted', 1: 'unhappy', 5: 'relaxed', 8: 'angry' };
+      const EMOTION_TO_PRESET = { delighted: 0, unhappy: 1, relaxed: 5, angry: 8 };
+
+      const ACTION_SETS = {
+        relaxed:   ['Pet', 'Lullaby', 'Blanket', 'Cuddle'],
+        delighted: ['Treat', 'Play Ball', 'Tickle', 'Dance'],
+        unhappy:   ['Ignore', 'Scold', 'Take Toy', 'Abandon'],
+        angry:     ['Poke', 'Wake Up', 'Loud Noise', 'Tease']
+      };
+
+      /*
+       * BALANCE CALCULATIONS
+       * ====================
+       * Decay rates (per 30s): Hunger -1, Happiness -0.7, Energy -0.5, Cleanliness -0.3
+       * Decay per minute:      Hunger -2, Happiness -1.4, Energy -1,   Cleanliness -0.6
+       * 
+       * Target: Equilibrium achievable with ~1 action/minute
+       * 
+       * STRATEGY:
+       * - Relaxed: Primary ENERGY restore (+4 avg), secondary cleanliness (+1.5 avg)
+       * - Delighted: Primary HUNGER restore (+6 avg), secondary happiness (+3 avg), costs energy (-2 avg)
+       * - Unhappy: Negative - drains happiness (-8 avg), slight cleanliness drain (-2 avg)
+       * - Angry: Negative - drains energy (-6 avg), drains happiness (-4 avg)
+       * 
+       * EQUILIBRIUM CHECK (assuming 2 Relaxed, 2 Delighted per 4 minutes):
+       * - Hunger:     2*(+6) - 4*2 = +12 - 8 = +4 ✓
+       * - Happiness:  2*(+1) + 2*(+3) - 4*1.4 = +2 + 6 - 5.6 = +2.4 ✓
+       * - Energy:     2*(+4) + 2*(-2) - 4*1 = +8 - 4 - 4 = 0 ✓
+       * - Cleanliness: 2*(+1.5) - 4*0.6 = +3 - 2.4 = +0.6 ✓
+       * 
+       * Negative actions should be ~1.5x the positive gain (punishment for bad choices)
+       */
+      const ACTION_EFFECTS = {
+        // RELAXED - Restores ENERGY (+4 avg) and CLEANLINESS (+1.5 avg), small happiness (+1 avg)
+        'Pet':        { energy: 3, happiness: 2, cleanliness: 1 },
+        'Lullaby':    { energy: 5, happiness: 1, cleanliness: 1 },
+        'Blanket':    { energy: 4, cleanliness: 3 },
+        'Cuddle':     { energy: 4, happiness: 2, cleanliness: 1 },
+        
+        // DELIGHTED - Restores HUNGER (+6 avg) and HAPPINESS (+3 avg), costs ENERGY (-2 avg)
+        'Treat':      { hunger: 8, happiness: 2, energy: -1 },
+        'Play Ball':  { hunger: 4, happiness: 4, energy: -3 },
+        'Tickle':     { hunger: 5, happiness: 4, energy: -2 },
+        'Dance':      { hunger: 7, happiness: 2, energy: -2 },
+        
+        // UNHAPPY - Drains HAPPINESS (-8 avg) and CLEANLINESS (-2 avg)
+        'Ignore':     { happiness: -6, cleanliness: -2 },
+        'Scold':      { happiness: -8, cleanliness: -1 },
+        'Take Toy':   { happiness: -9, cleanliness: -2 },
+        'Abandon':    { happiness: -10, cleanliness: -3 },
+        
+        // ANGRY - Drains ENERGY (-6 avg) and HAPPINESS (-4 avg)
+        'Poke':       { energy: -5, happiness: -3 },
+        'Wake Up':    { energy: -7, happiness: -4 },
+        'Loud Noise': { energy: -6, happiness: -5 },
+        'Tease':      { energy: -6, happiness: -4 }
+      };
+
+      const EMOTION_EMOJIS = {
+        relaxed:   ['💤', '😌', '🌙', '💆', '☁️', '🌸', '💫'],
+        delighted: ['🎉', '✨', '🌟', '💖', '🎊', '🥳', '🍬'],
+        unhappy:   ['💔', '😢', '🥀', '💧', '🌧️', '😞', '💨'],
+        angry:     ['😤', '💢', '🔥', '⚡', '💥', '😠', '👊']
+      };
+
+      const EMOTION_COLORS = {
+        relaxed: '#47ffe8',
+        delighted: '#e8ff47',
+        unhappy: '#47a3ff',
+        angry: '#ff4747'
+      };
+
+      const DECAY_INTERVAL_MS = 30000;
+
+      // ============================================================
+      //  GAME STATE
+      // ============================================================
+      const gameState = {
+        stats: { hunger: 80, happiness: 80, energy: 80, cleanliness: 80 },
+        actionIndices: { relaxed: 0, delighted: 0, unhappy: 0, angry: 0 },
+        isAnimating: false,
+        isFeeding: false,
+        feedingEmotion: null,
+        pendingAction: null,
+        currentEmotion: null,
+        isMuted: false,
+        audioUnlocked: false
+      };
+
+      let port = null, writer = null;
+      let activePreset = 0;
+      let pipelineAnimationId = null;
+      let feedingEmojis = [];
+
+      // Pipeline endpoints (will be calculated)
+      const pipelineEndpoints = {};
+
+      // ============================================================
+      //  AUDIO SYSTEM
+      // ============================================================
+      const audioCache = {};
+
+      function initAudio() {
+        Object.entries(AUDIO_CONFIG).forEach(([emotion, config]) => {
+          const audio = new Audio(config.file);
+          audio.volume = config.volume;
+          audio.preload = 'auto';
+          audioCache[emotion] = audio;
+        });
+      }
+
+      function unlockAudio() {
+        if (gameState.audioUnlocked) return;
+        Object.values(audioCache).forEach(audio => {
+          audio.play().then(() => audio.pause()).catch(() => {});
+          audio.currentTime = 0;
+        });
+        gameState.audioUnlocked = true;
+      }
+
+      function playEmotionSound(emotion) {
+        if (gameState.isMuted) return;
+        const audio = audioCache[emotion];
+        if (audio) {
+          audio.currentTime = 0;
+          audio.play().catch(e => console.log('Audio blocked:', e));
+        }
+      }
+
+      function toggleMute() {
+        gameState.isMuted = !gameState.isMuted;
+        const btn = document.getElementById('mute-btn');
+        btn.textContent = gameState.isMuted ? '🔇' : '🔊';
+        btn.classList.toggle('muted', gameState.isMuted);
+      }
+
+      // ============================================================
+      //  PIPELINE DRAWING
+      // ============================================================
+      function calculatePipelineEndpoints() {
+        const main = document.getElementById('game-area');
+        const mainRect = main.getBoundingClientRect();
+        const pet = document.getElementById('head-svg');
+        const petRect = pet.getBoundingClientRect();
+        
+        const petCenterX = petRect.left + petRect.width / 2 - mainRect.left;
+        const petCenterY = petRect.top + petRect.height / 2 - mainRect.top;
+
+        ['relaxed', 'delighted', 'unhappy', 'angry'].forEach(emotion => {
+          const btn = document.getElementById(`btn-${emotion}`);
+          const btnRect = btn.getBoundingClientRect();
+          const btnCenterX = btnRect.left + btnRect.width / 2 - mainRect.left;
+          const btnCenterY = btnRect.top + btnRect.height / 2 - mainRect.top;
+
+          pipelineEndpoints[emotion] = {
+            startX: btnCenterX,
+            startY: btnCenterY,
+            endX: petCenterX,
+            endY: petCenterY
+          };
+        });
+
+        drawPipelines();
+      }
+
+      function drawPipelines() {
+        const svg = document.getElementById('pipeline-svg');
+        svg.innerHTML = '';
+
+        Object.entries(pipelineEndpoints).forEach(([emotion, pts]) => {
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          
+          // Create curved path
+          const midX = (pts.startX + pts.endX) / 2;
+          const midY = (pts.startY + pts.endY) / 2;
+          
+          // Curve control points
+          const ctrl1X = pts.startX + (midX - pts.startX) * 0.5;
+          const ctrl1Y = pts.startY;
+          const ctrl2X = pts.endX - (pts.endX - midX) * 0.5;
+          const ctrl2Y = pts.endY;
+
+          const d = `M ${pts.startX} ${pts.startY} C ${ctrl1X} ${ctrl1Y}, ${ctrl2X} ${ctrl2Y}, ${pts.endX} ${pts.endY}`;
+          
+          path.setAttribute('d', d);
+          path.setAttribute('class', 'pipeline');
+          path.setAttribute('id', `pipe-${emotion}`);
+          path.style.setProperty('--pipe-color', EMOTION_COLORS[emotion]);
+          
+          svg.appendChild(path);
+        });
+      }
+
+      // ============================================================
+      //  PIPELINE EMOJI ANIMATION
+      // ============================================================
+      function startFeedingAnimation(emotion) {
+        if (gameState.isFeeding) return;
+        
+        gameState.isFeeding = true;
+        gameState.feedingEmotion = emotion;
+        
+        // Highlight button and pipeline
+        const btn = document.getElementById(`btn-${emotion}`);
+        btn.classList.add('feeding');
+        
+        const pipe = document.getElementById(`pipe-${emotion}`);
+        pipe.classList.add('active');
+
+        // Start spawning emojis
+        spawnPipelineEmoji(emotion);
+      }
+
+      function spawnPipelineEmoji(emotion) {
+        if (!gameState.isFeeding || gameState.feedingEmotion !== emotion) return;
+
+        const pts = pipelineEndpoints[emotion];
+        const emojis = EMOTION_EMOJIS[emotion];
+        const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+
+        const el = document.createElement('div');
+        el.className = 'pipe-emoji';
+        el.textContent = emoji;
+        el.style.left = `${pts.startX}px`;
+        el.style.top = `${pts.startY}px`;
+        el.style.transform = 'translate(-50%, -50%)';
+        
+        document.getElementById('game-area').appendChild(el);
+        feedingEmojis.push(el);
+
+        // Animate along the path
+        animateEmojiAlongPath(el, emotion, pts);
+
+        // Spawn next emoji
+        setTimeout(() => spawnPipelineEmoji(emotion), 200);
+      }
+
+      function animateEmojiAlongPath(el, emotion, pts) {
+        const duration = 1200;
+        const startTime = performance.now();
+
+        function animate(currentTime) {
+          if (!gameState.isFeeding || gameState.feedingEmotion !== emotion) {
+            el.remove();
+            return;
+          }
+
+          const elapsed = currentTime - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+
+          // Bezier curve interpolation
+          const t = progress;
+          const midX = (pts.startX + pts.endX) / 2;
+          const midY = (pts.startY + pts.endY) / 2;
+          const ctrl1X = pts.startX + (midX - pts.startX) * 0.5;
+          const ctrl1Y = pts.startY;
+          const ctrl2X = pts.endX - (pts.endX - midX) * 0.5;
+          const ctrl2Y = pts.endY;
+
+          // Cubic bezier
+          const x = Math.pow(1-t, 3) * pts.startX + 
+                    3 * Math.pow(1-t, 2) * t * ctrl1X + 
+                    3 * (1-t) * Math.pow(t, 2) * ctrl2X + 
+                    Math.pow(t, 3) * pts.endX;
+          const y = Math.pow(1-t, 3) * pts.startY + 
+                    3 * Math.pow(1-t, 2) * t * ctrl1Y + 
+                    3 * (1-t) * Math.pow(t, 2) * ctrl2Y + 
+                    Math.pow(t, 3) * pts.endY;
+
+          el.style.left = `${x}px`;
+          el.style.top = `${y}px`;
+          el.style.opacity = 1 - progress * 0.3;
+          el.style.transform = `translate(-50%, -50%) scale(${1 - progress * 0.3})`;
+
+          if (progress < 1) {
+            requestAnimationFrame(animate);
+          } else {
+            el.remove();
+            const idx = feedingEmojis.indexOf(el);
+            if (idx > -1) feedingEmojis.splice(idx, 1);
+          }
+        }
+
+        requestAnimationFrame(animate);
+      }
+
+      function stopFeedingAnimation() {
+        if (!gameState.isFeeding) return;
+
+        const emotion = gameState.feedingEmotion;
+        
+        // Remove highlights
+        const btn = document.getElementById(`btn-${emotion}`);
+        btn?.classList.remove('feeding');
+        
+        const pipe = document.getElementById(`pipe-${emotion}`);
+        pipe?.classList.remove('active');
+
+        // Clear all emojis
+        feedingEmojis.forEach(el => el.remove());
+        feedingEmojis = [];
+
+        gameState.isFeeding = false;
+        gameState.feedingEmotion = null;
+      }
+
+      // ============================================================
+      //  STATUS BARS
+      // ============================================================
+      function updateStatusBars() {
+        ['hunger', 'happiness', 'energy', 'cleanliness'].forEach(stat => {
+          const value = Math.max(0, Math.min(100, gameState.stats[stat]));
+          gameState.stats[stat] = value;
+          
+          const fill = document.getElementById(`fill-${stat}`);
+          fill.style.width = `${value}%`;
+          fill.classList.toggle('critical', value < 20);
+        });
+        
+        updateMoodRing();
+      }
+
+      function updateMoodRing() {
+        const avgMood = (gameState.stats.happiness + gameState.stats.energy) / 2;
+        const ring = document.getElementById('mood-ring');
+        
+        let color;
+        if (avgMood > 70) color = EMOTION_COLORS.delighted;
+        else if (avgMood > 50) color = EMOTION_COLORS.relaxed;
+        else if (avgMood > 30) color = EMOTION_COLORS.unhappy;
+        else color = EMOTION_COLORS.angry;
+        
+        ring.setAttribute('stroke', color);
+      }
+
+      function applyStatEffects(actionName) {
+        const effects = ACTION_EFFECTS[actionName];
+        if (!effects) return;
+        
+        Object.entries(effects).forEach(([stat, change]) => {
+          gameState.stats[stat] = Math.max(0, Math.min(100, gameState.stats[stat] + change));
+          
+          const fill = document.getElementById(`fill-${stat}`);
+          if (fill) {
+            fill.classList.remove('flash');
+            void fill.offsetWidth;
+            fill.classList.add('flash');
+          }
+        });
+        
+        updateStatusBars();
+        saveState();
+      }
+
+      function tickDecay() {
+        if (gameState.isAnimating || gameState.isFeeding) return;
+        
+        gameState.stats.hunger = Math.max(0, gameState.stats.hunger - 1);
+        gameState.stats.happiness = Math.max(0, gameState.stats.happiness - 0.7);
+        gameState.stats.energy = Math.max(0, gameState.stats.energy - 0.5);
+        gameState.stats.cleanliness = Math.max(0, gameState.stats.cleanliness - 0.3);
+        
+        updateStatusBars();
+        saveState();
+      }
+
+      // ============================================================
+      //  BUTTON TEXT ANIMATION
+      // ============================================================
+      function animateTextChange(emotion) {
+        const textEl = document.getElementById(`action-${emotion}`);
+        textEl.classList.add('changing');
+        
+        setTimeout(() => {
+          const actions = ACTION_SETS[emotion];
+          gameState.actionIndices[emotion] = (gameState.actionIndices[emotion] + 1) % actions.length;
+          textEl.textContent = actions[gameState.actionIndices[emotion]];
+        }, 200);
+        
+        setTimeout(() => textEl.classList.remove('changing'), 400);
+      }
+
+      // ============================================================
+      //  ACTION TRIGGER
+      // ============================================================
+      function triggerAction(emotion) {
+        if (gameState.isAnimating || gameState.isFeeding) return;
+        
+        unlockAudio();
+
+        // Store pending action
+        const currentAction = ACTION_SETS[emotion][gameState.actionIndices[emotion]];
+        gameState.pendingAction = { emotion, action: currentAction };
+
+        // Select this preset on robot
+        const presetId = EMOTION_TO_PRESET[emotion];
+        sendCmd('P ' + presetId);
+        activePreset = presetId;
+
+        // Highlight button as selected
+        document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`btn-${emotion}`).classList.add('active');
+
+        // Start feeding animation - this continues until robot is touched
+        startFeedingAnimation(emotion);
+
+        // Disable other buttons during feeding
+        document.querySelectorAll('.action-btn').forEach(b => {
+          if (!b.classList.contains(`btn-${emotion}`)) {
+            b.disabled = true;
+          }
+        });
+      }
+
+      function manualTrigger() {
+        if (gameState.isAnimating) return;
+        
+        unlockAudio();
+
+        // If we're feeding, this acts like the robot was touched
+        if (gameState.isFeeding) {
+          // Send trigger command to robot
+          sendCmd('T');
+          
+          // If not connected, simulate the response
+          if (!port || !writer) {
+            simulateRobotTouched();
+          }
+        } else {
+          // No feeding in progress - just trigger current preset
+          sendCmd('T');
+          
+          if (!port || !writer) {
+            // Simulate full cycle for demo
+            const emotion = PRESET_TO_EMOTION[activePreset] || 'delighted';
+            gameState.pendingAction = { 
+              emotion, 
+              action: ACTION_SETS[emotion][gameState.actionIndices[emotion]] 
+            };
+            simulateRobotTouched();
+          }
+        }
+      }
+
+      function simulateRobotTouched() {
+        // Simulate the preset_start event
+        handleRobotTouched();
+        
+        // Simulate animation duration
+        const emotion = gameState.pendingAction?.emotion || 'delighted';
+        const durations = { relaxed: 4000, delighted: 3000, unhappy: 3500, angry: 2000 };
+        setTimeout(() => {
+          handleAnimationEnd();
+        }, durations[emotion] || 3000);
+      }
+
+      // ============================================================
+      //  ROBOT EVENT HANDLERS
+      // ============================================================
+      function handleRobotTouched() {
+        // Stop feeding animation
+        stopFeedingAnimation();
+
+        const pending = gameState.pendingAction;
+        const emotion = pending?.emotion || PRESET_TO_EMOTION[activePreset] || 'delighted';
+        
+        gameState.isAnimating = true;
+        gameState.currentEmotion = emotion;
+
+        // NOW play sound
+        playEmotionSound(emotion);
+
+        // NOW apply stat effects
+        if (pending?.action) {
+          applyStatEffects(pending.action);
+        }
+
+        // Update mood ring to emotion color
+        document.getElementById('mood-ring').setAttribute('stroke', EMOTION_COLORS[emotion]);
+
+        // Visual feedback
+        document.getElementById('dot').className = 'dot run';
+        document.getElementById('pet-center').classList.add('animating');
+        document.querySelectorAll('.action-btn').forEach(b => b.disabled = true);
+        document.getElementById('manual-btn').disabled = true;
+      }
+
+      function handleAnimationEnd() {
+        gameState.isAnimating = false;
+
+        document.getElementById('dot').className = port ? 'dot on' : 'dot';
+        document.getElementById('pet-center').classList.remove('animating');
+        document.querySelectorAll('.action-btn').forEach(b => {
+          b.disabled = false;
+          b.classList.remove('active');
+        });
+        document.getElementById('manual-btn').disabled = false;
+
+        // Cycle button texts
+        if (gameState.currentEmotion) {
+          animateTextChange(gameState.currentEmotion);
+          
+          const others = ['relaxed', 'delighted', 'unhappy', 'angry'].filter(e => e !== gameState.currentEmotion);
+          const randomOther = others[Math.floor(Math.random() * others.length)];
+          setTimeout(() => animateTextChange(randomOther), 150);
+        }
+
+        updateMoodRing();
+        gameState.currentEmotion = null;
+        gameState.pendingAction = null;
+      }
+
+      // ============================================================
+      //  SERIAL COMMUNICATION
+      // ============================================================
+      function sendCmd(cmd) {
+        if (writer) writer.write(new TextEncoder().encode(cmd + '\n'));
+      }
+
+      function parseRx(line) {
+        try {
+          const obj = JSON.parse(line);
+
+          // Angle updates
+          if (obj.angle !== undefined && Object.keys(obj).length <= 2) {
+            setAngle(parseFloat(obj.angle), obj.vel);
+            return;
+          }
+
+          // Preset selection confirmation
+          if (obj.preset !== undefined) {
+            activePreset = obj.preset;
+          }
+
+          // Animation started = robot was touched!
+          if (obj.event === 'preset_start') {
+            handleRobotTouched();
+          }
+
+          // Animation finished
+          if (obj.event === 'preset_done') {
+            handleAnimationEnd();
+          }
+
+        } catch (e) {
+          // Non-JSON line, ignore
+        }
+      }
+
+      // ============================================================
+      //  HEAD ROTATION
+      // ============================================================
+      function setAngle(rad, vel) {
+        const deg = (rad * 180) / Math.PI;
+        document.getElementById('head-svg').style.transform = `rotate(${deg.toFixed(1)}deg)`;
+        document.getElementById('adeg').textContent = deg.toFixed(1) + '°';
+        if (vel !== undefined) {
+          document.getElementById('avel').textContent = 'vel: ' + parseFloat(vel).toFixed(1) + ' rad/s';
+        }
+      }
+
+      // ============================================================
+      //  WEB SERIAL
+      // ============================================================
+      async function toggleConnect() {
+        if (port) {
+          await doDisconnect();
+        } else {
+          await doConnect();
+        }
+      }
+
+      async function doConnect() {
+        if (!navigator.serial) {
+          alert('Web Serial not supported. Use Chrome or Edge.');
+          return;
+        }
+        try {
+          port = await navigator.serial.requestPort();
+          await port.open({ baudRate: parseInt(document.getElementById('baud').value) });
+          writer = port.writable.getWriter();
+          
+          document.getElementById('cbtn').textContent = 'Disconnect';
+          document.getElementById('dot').className = 'dot on';
+          document.getElementById('stxt').textContent = 'connected';
+          
+          readLoop();
+          setTimeout(() => sendCmd('I'), 300);
+        } catch (e) {
+          console.error('Connection failed:', e);
+          port = null;
+          writer = null;
+        }
+      }
+
+      async function doDisconnect() {
+        try {
+          if (writer) { writer.releaseLock(); writer = null; }
+          if (port) { await port.close(); port = null; }
+        } catch (e) {}
+        
+        document.getElementById('cbtn').textContent = 'Connect';
+        document.getElementById('dot').className = 'dot';
+        document.getElementById('stxt').textContent = 'disconnected';
+      }
+
+      async function readLoop() {
+        const dec = new TextDecoderStream();
+        port.readable.pipeTo(dec.writable);
+        const reader = dec.readable.getReader();
+        let buf = '';
+        
+        while (true) {
+          try {
+            const { value, done } = await reader.read();
+            if (done) break;
+            buf += value;
+            let i;
+            while ((i = buf.indexOf('\n')) >= 0) {
+              const line = buf.slice(0, i).trim();
+              if (line) parseRx(line);
+              buf = buf.slice(i + 1);
+            }
+          } catch (e) {
+            break;
+          }
+        }
+      }
+
+      // ============================================================
+      //  PERSISTENCE
+      // ============================================================
+      function saveState() {
+        try {
+          localStorage.setItem('hapticPetState_v2', JSON.stringify({
+            stats: gameState.stats,
+            actionIndices: gameState.actionIndices,
+            timestamp: Date.now()
+          }));
+        } catch (e) {}
+      }
+
+      function loadState() {
+        try {
+          const saved = localStorage.getItem('hapticPetState_v2');
+          if (saved) {
+            const data = JSON.parse(saved);
+            const elapsed = Date.now() - data.timestamp;
+            const decayTicks = Math.floor(elapsed / DECAY_INTERVAL_MS);
+            
+            gameState.stats = data.stats;
+            gameState.actionIndices = data.actionIndices || { relaxed: 0, delighted: 0, unhappy: 0, angry: 0 };
+            
+            // Cap decay to 20 ticks max (~10 min away) to prevent total drain
+            for (let i = 0; i < Math.min(decayTicks, 20); i++) {
+              gameState.stats.hunger = Math.max(0, gameState.stats.hunger - 1);
+              gameState.stats.happiness = Math.max(0, gameState.stats.happiness - 0.7);
+              gameState.stats.energy = Math.max(0, gameState.stats.energy - 0.5);
+              gameState.stats.cleanliness = Math.max(0, gameState.stats.cleanliness - 0.3);
+            }
+            
+            Object.entries(gameState.actionIndices).forEach(([emotion, index]) => {
+              const el = document.getElementById(`action-${emotion}`);
+              if (el) el.textContent = ACTION_SETS[emotion][index];
+            });
+          }
+        } catch (e) {}
+        
+        updateStatusBars();
+      }
+
+      function resetGame() {
+        gameState.stats = { hunger: 80, happiness: 80, energy: 80, cleanliness: 80 };
+        gameState.actionIndices = { relaxed: 0, delighted: 0, unhappy: 0, angry: 0 };
+        localStorage.removeItem('hapticPetState_v2');
+        
+        // Reset button texts
+        Object.entries(ACTION_SETS).forEach(([emotion, actions]) => {
+          const el = document.getElementById(`action-${emotion}`);
+          if (el) el.textContent = actions[0];
+        });
+        
+        updateStatusBars();
+      }
+
+      // ============================================================
+      //  INITIALIZATION
+      // ============================================================
+      function init() {
+        initAudio();
+        loadState();
+        updateStatusBars();
+        
+        // Calculate pipelines after layout
+        setTimeout(calculatePipelineEndpoints, 100);
+        window.addEventListener('resize', calculatePipelineEndpoints);
+        
+        // Decay timer
+        setInterval(tickDecay, DECAY_INTERVAL_MS);
+        
+        // Click anywhere to unlock audio
+        document.addEventListener('click', unlockAudio, { once: true });
+      }
+
+      init();
+    </script>
+  </body>
+</html>
