@@ -12,11 +12,11 @@
         padding: 0;
       }
       :root {
-        --bg: #1a1a2e;
-        --panel: #16213e;
-        --border: #0f3460;
-        --text: #eaeaea;
-        --muted: #7f8c8d;
+        --bg: #f7e7cc;
+        --panel: #d6a97a;
+        --border: #8f5f37;
+        --text: #4a2d19;
+        --muted: #866145;
         --relaxed: #47ffe8;
         --delighted: #e8ff47;
         --unhappy: #47a3ff;
@@ -33,7 +33,9 @@
         overflow: hidden;
       }
       body {
-        background: var(--bg);
+        background:
+          linear-gradient(rgba(247, 231, 204, 0.24), rgba(247, 231, 204, 0.24)),
+          url("media/image.png") center center / cover no-repeat fixed;
         color: var(--text);
         font-family: var(--font-main);
         display: flex;
@@ -47,7 +49,7 @@
         justify-content: space-between;
         padding: 10px 20px;
         border-bottom: 1px solid var(--border);
-        background: var(--panel);
+        background: rgba(214, 169, 122, 0.9);
         flex-shrink: 0;
       }
       .logo {
@@ -124,8 +126,10 @@
         position: relative;
         background: var(--panel);
         border: 2px solid var(--border);
-        border-radius: 16px;
-        padding: 20px 16px;
+        border-radius: 9999px;
+        width: clamp(112px, 14vw, 150px);
+        aspect-ratio: 1 / 1;
+        padding: 14px;
         cursor: pointer;
         text-align: center;
         transition: all 0.15s ease;
@@ -136,20 +140,24 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
+        justify-self: start;
+        align-self: start;
         z-index: 10;
+        box-shadow: inset 0 0 28px var(--btn-color-alpha), 0 0 18px var(--btn-color-alpha);
       }
       .action-btn::before {
         content: '';
         position: absolute;
         inset: 0;
         background: radial-gradient(circle at center, var(--btn-color-alpha, transparent), transparent 70%);
-        opacity: 0;
+        opacity: 0.9;
         transition: opacity 0.3s;
+        pointer-events: none;
       }
       .action-btn:hover::before { opacity: 1; }
       .action-btn:hover {
         transform: scale(1.02);
-        box-shadow: 0 8px 25px var(--btn-color-alpha);
+        box-shadow: inset 0 0 34px var(--btn-color-alpha), 0 10px 28px var(--btn-color-alpha);
       }
       .action-btn:active { transform: scale(0.98); }
       .action-btn:disabled {
@@ -158,11 +166,11 @@
         transform: none;
       }
       .action-btn.feeding {
-        box-shadow: 0 0 30px var(--btn-color);
+        box-shadow: inset 0 0 36px var(--btn-color-alpha), 0 0 34px var(--btn-color);
       }
       .action-btn.active {
         border-color: var(--btn-color);
-        box-shadow: 0 0 20px var(--btn-color-alpha);
+        box-shadow: inset 0 0 38px var(--btn-color-alpha), 0 0 28px var(--btn-color-alpha);
       }
 
       .btn-relaxed {
@@ -176,18 +184,22 @@
         --btn-color: var(--delighted);
         --btn-color-alpha: rgba(232, 255, 71, 0.2);
         border-color: var(--delighted);
+        justify-self: end;
       }
       .btn-unhappy {
         grid-column: 1; grid-row: 3;
         --btn-color: var(--unhappy);
         --btn-color-alpha: rgba(71, 163, 255, 0.2);
         border-color: var(--unhappy);
+        align-self: end;
       }
       .btn-angry {
         grid-column: 3; grid-row: 3;
         --btn-color: var(--angry);
         --btn-color-alpha: rgba(255, 71, 71, 0.2);
         border-color: var(--angry);
+        justify-self: end;
+        align-self: end;
       }
 
       .btn-emoji {
@@ -276,27 +288,6 @@
       .manual-btn:disabled {
         opacity: 0.4;
         cursor: not-allowed;
-      }
-
-      /* Pipeline SVG overlay */
-      #pipeline-svg {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 1;
-      }
-      .pipeline {
-        fill: none;
-        stroke: var(--border);
-        stroke-width: 4;
-        stroke-linecap: round;
-      }
-      .pipeline.active {
-        stroke: var(--pipe-color);
-        filter: drop-shadow(0 0 6px var(--pipe-color));
       }
 
       /* Pipeline emoji particles */
@@ -416,9 +407,6 @@
     </header>
 
     <main id="game-area">
-      <!-- Pipeline SVG - drawn dynamically -->
-      <svg id="pipeline-svg"></svg>
-
       <!-- Corner buttons -->
       <button class="action-btn btn-relaxed" id="btn-relaxed" onclick="triggerAction('relaxed')">
         <span class="btn-emoji">💤</span>
@@ -509,10 +497,10 @@
       //  CONFIGURATION
       // ============================================================
       const AUDIO_CONFIG = {
-        relaxed:   { file: 'relaxed.mp3',   volume: 0.7 },
-        delighted: { file: 'delighted.mp3', volume: 0.8 },
-        unhappy:   { file: 'unhappy.mp3',   volume: 0.6 },
-        angry:     { file: 'angry.mp3',     volume: 0.75 }
+        relaxed:   { file: 'sounds/relaxed-timed.wav',   volume: 0.8 },
+        delighted: { file: 'sounds/delighted-timed.wav', volume: 0.4 },
+        unhappy:   { file: 'sounds/unhappy-timed.wav',   volume: 0.6 },
+        angry:     { file: 'sounds/angry-timed.wav',     volume: 0.4 }
       };
 
       const PRESET_TO_EMOTION = { 0: 'delighted', 1: 'unhappy', 5: 'relaxed', 8: 'angry' };
@@ -676,36 +664,6 @@
             endY: petCenterY
           };
         });
-
-        drawPipelines();
-      }
-
-      function drawPipelines() {
-        const svg = document.getElementById('pipeline-svg');
-        svg.innerHTML = '';
-
-        Object.entries(pipelineEndpoints).forEach(([emotion, pts]) => {
-          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-          
-          // Create curved path
-          const midX = (pts.startX + pts.endX) / 2;
-          const midY = (pts.startY + pts.endY) / 2;
-          
-          // Curve control points
-          const ctrl1X = pts.startX + (midX - pts.startX) * 0.5;
-          const ctrl1Y = pts.startY;
-          const ctrl2X = pts.endX - (pts.endX - midX) * 0.5;
-          const ctrl2Y = pts.endY;
-
-          const d = `M ${pts.startX} ${pts.startY} C ${ctrl1X} ${ctrl1Y}, ${ctrl2X} ${ctrl2Y}, ${pts.endX} ${pts.endY}`;
-          
-          path.setAttribute('d', d);
-          path.setAttribute('class', 'pipeline');
-          path.setAttribute('id', `pipe-${emotion}`);
-          path.style.setProperty('--pipe-color', EMOTION_COLORS[emotion]);
-          
-          svg.appendChild(path);
-        });
       }
 
       // ============================================================
@@ -720,9 +678,6 @@
         // Highlight button and pipeline
         const btn = document.getElementById(`btn-${emotion}`);
         btn.classList.add('feeding');
-        
-        const pipe = document.getElementById(`pipe-${emotion}`);
-        pipe.classList.add('active');
 
         // Start spawning emojis
         spawnPipelineEmoji(emotion);
@@ -809,9 +764,6 @@
         // Remove highlights
         const btn = document.getElementById(`btn-${emotion}`);
         btn?.classList.remove('feeding');
-        
-        const pipe = document.getElementById(`pipe-${emotion}`);
-        pipe?.classList.remove('active');
 
         // Clear all emojis
         feedingEmojis.forEach(el => el.remove());
