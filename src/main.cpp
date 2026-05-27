@@ -278,7 +278,7 @@ void build_pattern5() // relaxed (before 6-relaxed)
 
 void build_pattern8() // angry (before 9- angry)
 {
-  Step tmp[MAX_STEPS / REPEAT_COUNT];
+  Step tmp[MAX_STEPS / REPEAT_COUNT]; 
   int tmp_len = 0;
 
   // Burst 1 — escalating erratic shakes, no holds
